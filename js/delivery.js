@@ -72,12 +72,12 @@ async function loadAndRenderCalendar() {
     const calendar = new FullCalendar.Calendar(document.getElementById('deliveryCalendar'), {
       initialView: 'listMonth',
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-      noEventsContent: 'Nessuna consegna programmata',
+      noEventsContent: 'Nessuna distribuzione programmata',
       events: events.map(eventToFC),
       eventClick: (info) => {
         const ev = info.event.extendedProps;
         if (ev.expired) {
-          showToast('Il termine per le modifiche è scaduto per questa consegna.', 'warning');
+          showToast('Il termine per le modifiche è scaduto per questa distribuzione.', 'warning');
           return;
         }
         openDeliveryModal(ev);
@@ -85,7 +85,7 @@ async function loadAndRenderCalendar() {
     });
     calendar.render();
   } catch {
-    showToast('Impossibile caricare le consegne. Il backend è in esecuzione?', 'warning');
+    showToast('Impossibile caricare le distribuzioni. Il backend è in esecuzione?', 'warning');
   }
 }
 

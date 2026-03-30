@@ -98,22 +98,12 @@ function addParticipantRow() {
     </div>`);
 }
 
-// Event delegation for remove-participant buttons
-document.getElementById('participantsList').addEventListener('click', (e) => {
-  const btn = e.target.closest('.remove-participant');
-  if (!btn) return;
-  const rows = document.querySelectorAll('.participant-row');
-  if (rows.length === 1) { showToast('Almeno un partecipante è obbligatorio.', 'warning'); return; }
-  btn.closest('.participant-row')?.remove();
-});
-
 async function saveSubscription() {
   const ownerId = document.getElementById('subQuotaOwner').value;
   if (!ownerId) { showToast('Seleziona prima il tuo nome.', 'warning'); return; }
 
   const participantInputs = document.querySelectorAll('.participant-name');
   const participants = [...participantInputs].map((i) => i.value.trim()).filter(Boolean);
-  if (!participants.length) { showToast('Inserisci almeno un partecipante.', 'warning'); return; }
 
   const body = {
     event_id:       Number(document.getElementById('subEventId').value),

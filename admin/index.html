@@ -61,8 +61,8 @@
         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
           <select id="eventTypeFilter" class="form-select w-auto">
             <option value="all">Tutti i tipi</option>
-            <option value="inv">Partecipazione</option>
-            <option value="del">Consegna</option>
+            <option value="inv">Partecipazione in campo</option>
+            <option value="del">Distribuzione</option>
             <option value="evt">Evento</option>
           </select>
           <button class="btn btn-success btn-sm" id="addEventBtn">
@@ -176,7 +176,7 @@
               <select id="eventType" class="form-select" required>
                 <option value="" disabled selected>Seleziona tipo…</option>
                 <option value="inv">Partecipazione</option>
-                <option value="del">Consegna</option>
+                <option value="del">Distribuzione</option>
                 <option value="evt">Evento</option>
               </select>
             </div>
@@ -201,7 +201,7 @@
               <div class="mb-3">
                 <label for="eventDeadline" class="form-label fw-semibold">Termine per modifiche</label>
                 <input type="date" id="eventDeadline" class="form-control">
-                <div class="form-text">Default: due giorni prima della consegna</div>
+                <div class="form-text">Default: due giorni prima della distribuzione</div>
               </div>
             </div>
           </form>
