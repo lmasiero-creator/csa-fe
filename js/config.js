@@ -16,4 +16,4 @@ export const BASE_PATH = isLocal ? '' : '/csa-fe';
 /** URL of the Express backend. */
 export const API_BASE_URL = isLocal
   ? 'http://localhost:3000'
-  : 'https://csa-be-ug3p.onrender.com/';
+  : 'https://csa-be-ug3p.onrender.com';
