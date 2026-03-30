@@ -7,9 +7,9 @@
  *   showToast(message, type?) — display a Bootstrap toast notification.
  */
 
-import { BASE_PATH } from './config.js';
+import { BASE_PATH, API_BASE_URL } from './config.js';
 
-// ── Shared navigation bar ──────────────────────────────────────────────────────
+// ── Shared navigation bar ────────────────────────────────────────────────────
 const headerRoot = document.getElementById('header-root');
 if (headerRoot) {
   headerRoot.innerHTML = `
@@ -17,12 +17,56 @@ if (headerRoot) {
       <a class="navbar-brand fw-semibold mb-0" href="${BASE_PATH}/">🌱 CSA</a>
       <a href="${BASE_PATH}/account/"
          title="Il mio account"
-         class="text-white text-decoration-none"
+         class="text-decoration-none"
          aria-label="Il mio account">
-        <i class="bi bi-person-circle fs-3"></i>
+        <span id="navAvatar" class="nav-avatar-circle">
+          <i class="bi bi-person-fill" style="font-size:1.1rem"></i>
+        </span>
       </a>
     </nav>`;
 }
+
+// ── Nav avatar: render initials (or photo) from cookie ───────────────────────────
+
+function navHashColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return `hsl(${Math.abs(h) % 360}, 55%, 40%)`;
+}
+
+(function initNavAvatar() {
+  const match   = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
+  const ownerId = match ? decodeURIComponent(match.split('=')[1]) : null;
+  if (!ownerId) return;
+
+  const el = document.getElementById('navAvatar');
+  if (!el) return;
+
+  function renderInitials(name, surname) {
+    const initials = [(name?.[0] ?? ''), (surname?.[0] ?? '')].join('').toUpperCase();
+    el.style.background = navHashColor((name ?? '') + (surname ?? ''));
+    el.textContent       = initials || '?';
+  }
+
+  // Try profile first (may include a photo)
+  fetch(`${API_BASE_URL}/api/account/${ownerId}`)
+    .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+    .then(({ name, surname, photo_data }) => {
+      if (photo_data) {
+        el.style.background = 'transparent';
+        el.innerHTML = `<img src="${photo_data}" alt="Avatar">`;
+      } else {
+        renderInitials(name, surname);
+      }
+    })
+    .catch(() => {
+      // No profile saved yet — fall back to quota owner name
+      fetch(`${API_BASE_URL}/api/quota-owners/${ownerId}`)
+        .then((r) => r.ok ? r.json() : Promise.reject())
+        .then(({ name, surname }) => renderInitials(name, surname))
+        .catch(() => { /* backend offline — keep default icon */ });
+    });
+}());
 
 // ── Toast container (one per page, appended once) ──────────────────────────────
 if (!document.getElementById('appToast')) {
