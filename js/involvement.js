@@ -3,11 +3,15 @@
  * Shows involvement events; clicking opens a subscription form.
  */
 
-import { API_BASE_URL } from './config.js';
-import { showToast }    from './layout.js';
+import { API_BASE_URL }    from './config.js';
+import { showToast }       from './layout.js';
+import { initOwnerPicker } from './owner-picker.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let selectedEvent = null; // extendedProps of the clicked FullCalendar event
+let selectedEvent  = null; // extendedProps of the clicked FullCalendar event
+let ownerPickerInv = null; // reference to the picker API
+let allOwnersInv   = [];   // quota owners list for name lookup in participants view
+let invCalendar    = null; // FullCalendar instance (stored to refresh colors)
 
 // ── Cookie helper ─────────────────────────────────────────────────────────────
 function savedOwnerId() {
@@ -20,18 +24,11 @@ async function loadOwners() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/quota-owners`);
     if (!res.ok) return;
-    const owners = await res.json();
-    const sel    = document.getElementById('subQuotaOwner');
-    owners.forEach((o) => {
-      const opt = document.createElement('option');
-      opt.value       = o.id;
-      opt.textContent = `${o.name} ${o.surname}`;
-      sel.appendChild(opt);
+    allOwnersInv = await res.json();
+    ownerPickerInv = initOwnerPicker('subQuotaOwnerPicker', allOwnersInv, {
+      hiddenId:   'subQuotaOwner',
+      selectedId: savedOwnerId(),
     });
-    const saved = savedOwnerId();
-    if (saved && owners.some((o) => String(o.id) === saved)) {
-      sel.value = saved;
-    }
   } catch { /* backend not available */ }
 }
 
@@ -49,14 +46,14 @@ async function loadAndRenderCalendar() {
     const res = await fetch(`${API_BASE_URL}/api/events?type=inv`);
     if (!res.ok) throw new Error();
     const events = await res.json();
-    const calendar = new FullCalendar.Calendar(document.getElementById('involvementCalendar'), {
+    invCalendar = new FullCalendar.Calendar(document.getElementById('involvementCalendar'), {
       initialView: 'listMonth',
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       noEventsContent: 'Nessuna attività programmata',
       events: events.map(eventToFC),
       eventClick: (info) => openSubscriptionModal(info.event.extendedProps),
     });
-    calendar.render();
+    invCalendar.render();
   } catch {
     showToast('Impossibile caricare gli eventi. Il backend è in esecuzione?', 'warning');
   }
@@ -64,20 +61,106 @@ async function loadAndRenderCalendar() {
 
 // ── Subscription modal ────────────────────────────────────────────────────────
 
-function openSubscriptionModal(ev) {
-  selectedEvent = ev;
-  document.getElementById('subEventId').value   = ev.id;
-  document.getElementById('subEventInfo').textContent =
-    `${ev.date}  —  ${ev.description}`;
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showInvListPanel() {
+  document.getElementById('invParticipantsPanel').classList.remove('d-none');
+  document.getElementById('invFormPanel').classList.add('d-none');
+  document.getElementById('invListFooter').classList.remove('d-none');
+  document.getElementById('invFormFooter').classList.add('d-none');
+}
+
+function showInvFormPanel() {
+  document.getElementById('invParticipantsPanel').classList.add('d-none');
+  document.getElementById('invFormPanel').classList.remove('d-none');
+  document.getElementById('invListFooter').classList.add('d-none');
+  document.getElementById('invFormFooter').classList.remove('d-none');
   clearSubForm();
+}
+
+async function refreshInvParticipantsList(eventId) {
+  const container = document.getElementById('invParticipantsList');
+  container.innerHTML = `
+    <div class="text-center text-muted py-3">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+      <span class="ms-2">Caricamento…</span>
+    </div>`;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/involvement?event_id=${eventId}`);
+    if (!res.ok) throw new Error();
+    renderInvParticipantsList(await res.json(), eventId);
+  } catch {
+    container.innerHTML = `<p class="text-danger small">Errore durante il caricamento.</p>`;
+  }
+}
+
+function renderInvParticipantsList(subs, eventId) {
+  const container = document.getElementById('invParticipantsList');
+  const myId      = savedOwnerId();
+
+  if (!subs.length) {
+    container.innerHTML = `<p class="text-muted fst-italic text-center py-2">Nessun iscritto. Sii il primo!</p>`;
+    return;
+  }
+
+  container.innerHTML = subs.map((sub) => {
+    const owner = allOwnersInv.find((o) => String(o.id) === String(sub.quota_owner_id));
+    const name  = owner ? `${owner.name} ${owner.surname}` : `Socio #${sub.quota_owner_id}`;
+    const canDelete = String(sub.quota_owner_id) === String(myId);
+    const extras = sub.participants.filter(Boolean);
+    return `
+      <div class="d-flex align-items-start justify-content-between border rounded p-2 mb-2">
+        <div class="flex-grow-1 me-2">
+          <strong>${escHtml(name)}</strong>
+          ${extras.length ? `<span class="text-muted ms-2 small">${extras.map(p => escHtml(p)).join(', ')}</span>` : ''}
+          ${sub.duration ? `<br><small class="text-muted"><i class="bi bi-clock me-1"></i>${escHtml(sub.duration)}</small>` : ''}
+          ${sub.pranzo   ? `<br><small class="text-muted"><i class="bi bi-egg-fried me-1"></i>${escHtml(sub.pranzo)}</small>` : ''}
+        </div>
+        ${canDelete ? `<button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0"
+            data-delete-sub-id="${sub.id}" data-event-id="${eventId}" title="Elimina iscrizione">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function deleteInvSubscription(subId, eventId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/involvement/${subId}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) throw new Error();
+    showToast('Iscrizione eliminata.', 'success');
+    await refreshInvParticipantsList(eventId);
+    await refreshInvCalendar();
+  } catch {
+    showToast("Errore durante l'eliminazione.", 'danger');
+  }
+}
+
+async function refreshInvCalendar() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/events?type=inv`);
+    if (!res.ok) return;
+    const events = await res.json();
+    invCalendar?.removeAllEvents();
+    events.forEach((ev) => invCalendar?.addEvent(eventToFC(ev)));
+  } catch { /* ignore */ }
+}
+
+async function openSubscriptionModal(ev) {
+  selectedEvent = ev;
+  document.getElementById('subEventId').value       = ev.id;
+  document.getElementById('subEventInfo').textContent = `${ev.date}  —  ${ev.description}`;
+  showInvListPanel();
   bootstrap.Modal.getOrCreateInstance(document.getElementById('subscriptionModal')).show();
+  await refreshInvParticipantsList(ev.id);
 }
 
 function clearSubForm() {
   document.getElementById('subscriptionForm').reset();
   // Restore owner selection from cookie
-  const saved = savedOwnerId();
-  if (saved) document.getElementById('subQuotaOwner').value = saved;
+  ownerPickerInv?.setValue(savedOwnerId());
   // Reset participants list to one empty row
   const list = document.getElementById('participantsList');
   list.innerHTML = '';
@@ -123,8 +206,12 @@ async function saveSubscription() {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message ?? 'Errore durante il salvataggio.');
     }
-    bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'))?.hide();
-    showToast('Iscrizione salvata con successo!');
+    showToast('Iscrizione salvata con successo!', 'success');
+    showInvListPanel();
+    if (selectedEvent) {
+      await refreshInvParticipantsList(selectedEvent.id);
+      await refreshInvCalendar();
+    }
   } catch (err) {
     showToast(err.message, 'danger');
   }
@@ -132,9 +219,30 @@ async function saveSubscription() {
 
 // ── Event listeners ───────────────────────────────────────────────────────────
 
-document.getElementById('addParticipantBtn').addEventListener('click',  addParticipantRow);
-document.getElementById('clearSubFormBtn').addEventListener('click',    clearSubForm);
-document.getElementById('saveSubBtn').addEventListener('click',         saveSubscription);
+// Participants list: show form panel
+document.getElementById('partecipaBtnInv').addEventListener('click', showInvFormPanel);
+
+// Form panel: back to list
+document.getElementById('backToInvListBtn').addEventListener('click', async () => {
+  showInvListPanel();
+  if (selectedEvent) await refreshInvParticipantsList(selectedEvent.id);
+});
+
+// Participants list: delete subscription (own only — button only rendered for own rows)
+document.getElementById('invParticipantsList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-delete-sub-id]');
+  if (!btn) return;
+  deleteInvSubscription(btn.dataset.deleteSubId, btn.dataset.eventId);
+});
+
+// Form: add / remove extra participant rows
+document.getElementById('addParticipantBtn').addEventListener('click', addParticipantRow);
+document.getElementById('participantsList').addEventListener('click', (e) => {
+  if (e.target.closest('.remove-participant')) e.target.closest('.participant-row')?.remove();
+});
+
+document.getElementById('clearSubFormBtn').addEventListener('click',  clearSubForm);
+document.getElementById('saveSubBtn').addEventListener('click',        saveSubscription);
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 

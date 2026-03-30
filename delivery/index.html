@@ -40,19 +40,18 @@
             </div>
 
             <div class="mb-3">
-              <label for="deliveryQuotaOwner" class="form-label fw-semibold">
+              <label for="deliveryQuotaOwnerPicker-search" class="form-label fw-semibold">
                 Chi sei? <span class="text-danger">*</span>
               </label>
-              <select id="deliveryQuotaOwner" class="form-select" required>
-                <option value="" disabled selected>Seleziona il tuo nome…</option>
-              </select>
+              <div id="deliveryQuotaOwnerPicker"></div>
+              <input type="hidden" id="deliveryQuotaOwner" name="deliveryQuotaOwner" required>
             </div>
 
             <div class="mb-3">
               <label for="deliveryPoint" class="form-label fw-semibold">
-                Nuovo punto di consegna <span class="text-danger">*</span>
+                Nuovo punto di consegna
               </label>
-              <select id="deliveryPoint" class="form-select" required>
+              <select id="deliveryPoint" class="form-select">
                 <option value="" disabled selected>Seleziona punto…</option>
                 <option value="prt">Picchetto (Portello)</option>
                 <option value="arc">Pedro (Arcella)</option>
@@ -63,16 +62,19 @@
             <div class="mb-3">
               <label for="deliveryDescription" class="form-label fw-semibold">Note</label>
               <textarea id="deliveryDescription" class="form-control" rows="3" maxlength="1024"
-                        placeholder="Es. al mio posto ritira o dona la mia quota alla cassetta di scambio o sposta a Venerdì"
+                        placeholder="al mio posto ritira Paolo / dono la mia quota alla cassetta di scambio / sposto il ritiro a venerdì"
                         data-bs-toggle="tooltip"
-                        title="Es. al mio posto ritira o dona la mia quota alla cassetta di scambio o sposta a Venerdì">
+                        title="al mio posto ritira Paolo / dono la mia quota alla cassetta di scambio / sposto il ritiro a venerdì">
               </textarea>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" id="clearDeliveryFormBtn">
-            <i class="bi bi-x-circle me-1"></i>Cancella
+          <button type="button" class="btn btn-outline-secondary me-auto" id="clearDeliveryFormBtn">
+            <i class="bi bi-eraser me-1"></i>Pulisci
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
           <button type="button" class="btn btn-success" id="saveDeliveryBtn">
             <i class="bi bi-check-lg me-1"></i>Salva

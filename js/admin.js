@@ -1,10 +1,11 @@
 /**
  * admin.js — logic for the /admin page.
- * Manages three tabs: Soci (quota owners), Calendario (events), Destinatari (recipients).
+ * Manages three tabs: Membri (quota owners), Calendario (events), Destinatari (recipients).
  */
 
-import { API_BASE_URL } from './config.js';
-import { showToast }    from './layout.js';
+import { API_BASE_URL }    from './config.js';
+import { showToast }       from './layout.js';
+import { initOwnerPicker } from './owner-picker.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const QUOTA_LABELS     = { quota_intera: 'Quota intera', mezza_quota: 'Mezza quota' };
@@ -20,6 +21,10 @@ let calendarInstance  = null;
 let calendarLoaded    = false;
 let allEvents         = [];
 let currentFilter     = 'all';
+// Admin involvement modal state
+let allOwnersAdm     = [];   // cached owners for the admin inv modal name lookup
+let ownerPickerAdm   = null; // picker API reference
+let selectedAdmEvent = null; // extendedProps of the clicked inv event
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -51,7 +56,7 @@ async function loadOwners() {
 function renderOwnersTable(owners) {
   const tbody = document.getElementById('ownersTbody');
   if (!owners.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun socio registrato.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun membro registrato.</td></tr>';
     return;
   }
   tbody.innerHTML = owners.map((o) => `
@@ -77,7 +82,7 @@ function openOwnerModal(owner = null) {
   document.getElementById('ownerEmail').value     = owner?.email ?? '';
   document.getElementById('ownerPhonePrefix').value = owner?.phone_prefix ?? '+39';
   document.getElementById('ownerPhone').value     = owner?.phone ?? '';
-  document.getElementById('ownerModalTitle').textContent = owner ? 'Modifica socio' : 'Aggiungi socio';
+  document.getElementById('ownerModalTitle').textContent = owner ? 'Modifica membro' : 'Aggiungi membro';
   bootstrap.Modal.getOrCreateInstance(document.getElementById('ownerModal')).show();
 }
 
@@ -112,7 +117,7 @@ async function saveOwner() {
       body: JSON.stringify(body),
     });
     bootstrap.Modal.getInstance(document.getElementById('ownerModal'))?.hide();
-    showToast(isEdit ? 'Socio aggiornato.' : 'Socio aggiunto.');
+    showToast(isEdit ? 'Membro aggiornato.' : 'Membro aggiunto.');
     loadOwners();
   } catch (err) {
     showToast(err.message, 'danger');
@@ -184,7 +189,10 @@ function initCalendar() {
     noEventsContent: 'Nessun evento',
     events: [],
     dateClick: (info) => openEventModal({ date: info.dateStr }),
-    eventClick: (info) => openEventModal(info.event.extendedProps),
+    eventClick: (info) => {
+      const ev = info.event.extendedProps;
+      if (ev.type === 'inv') { openAdminInvModal(ev); } else { openEventModal(ev); }
+    },
   });
   calendarInstance.render();
   loadCalendarEvents();
@@ -236,9 +244,8 @@ document.getElementById('eventDate').addEventListener('change', () => {
 async function saveEvent() {
   const date        = document.getElementById('eventDate').value;
   const type        = document.getElementById('eventType').value;
-  const description = document.getElementById('eventDescription').value.trim();
-  if (!date || !type || !description) {
-    showToast('Data, tipo e descrizione sono obbligatori.', 'warning'); return;
+  if (!date || !type) {
+    showToast('Data e Tipo sono obbligatori.', 'warning'); return;
   }
   const body = {
     date, type, description,
@@ -271,6 +278,167 @@ document.getElementById('eventTypeFilter').addEventListener('change',  (e) => {
 
 // Lazy calendar init on tab activation
 document.getElementById('tab-calendario').addEventListener('shown.bs.tab', initCalendar);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ADMIN INVOLVEMENT PARTICIPANTS MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+
+function showAdminInvListPanel() {
+  document.getElementById('adminInvListPanel').classList.remove('d-none');
+  document.getElementById('adminInvFormPanel').classList.add('d-none');
+  document.getElementById('adminInvListFooter').classList.remove('d-none');
+  document.getElementById('adminInvFormFooter').classList.add('d-none');
+}
+
+function showAdminInvFormPanel() {
+  document.getElementById('adminInvListPanel').classList.add('d-none');
+  document.getElementById('adminInvFormPanel').classList.remove('d-none');
+  document.getElementById('adminInvListFooter').classList.add('d-none');
+  document.getElementById('adminInvFormFooter').classList.remove('d-none');
+  clearAdminInvForm();
+  // (Re-)init owner picker every time the form opens so it targets the correct DOM
+  ownerPickerAdm = initOwnerPicker('adminInvQuotaOwnerPicker', allOwnersAdm, {
+    hiddenId: 'adminInvQuotaOwner',
+  });
+}
+
+function clearAdminInvForm() {
+  document.getElementById('adminInvQuotaOwner').value  = '';
+  document.getElementById('adminInvDuration').value    = '';
+  document.getElementById('adminInvPranzo').value      = '';
+  const list = document.getElementById('adminParticipantsList');
+  list.innerHTML = '';
+  addAdminParticipantRow();
+}
+
+function addAdminParticipantRow() {
+  document.getElementById('adminParticipantsList').insertAdjacentHTML('beforeend', `
+    <div class="input-group mb-2 participant-row">
+      <input type="text" class="form-control participant-name" maxlength="256"
+             placeholder="Nome e cognome partecipante">
+      <button type="button" class="btn btn-outline-danger remove-participant"
+              title="Rimuovi" tabindex="-1" aria-label="Rimuovi partecipante">
+        <i class="bi bi-dash"></i>
+      </button>
+    </div>`);
+}
+
+async function openAdminInvModal(ev) {
+  selectedAdmEvent = ev;
+  document.getElementById('adminInvEventId').value       = ev.id;
+  document.getElementById('adminInvEventInfo').textContent = `${ev.date}  —  ${ev.description}`;
+  document.getElementById('adminInvModalTitle').textContent = `Partecipanti — ${ev.description}`;
+  showAdminInvListPanel();
+  // Lazy-load owners once
+  if (!allOwnersAdm.length) {
+    try { allOwnersAdm = await apiFetch('/api/quota-owners'); } catch { /* ignore */ }
+  }
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminInvModal')).show();
+  await refreshAdminParticipantsList(ev.id);
+}
+
+async function refreshAdminParticipantsList(eventId) {
+  const container = document.getElementById('adminInvParticipantsList');
+  container.innerHTML = `
+    <div class="text-center text-muted py-3">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+      <span class="ms-2">Caricamento…</span>
+    </div>`;
+  try {
+    const subs = await apiFetch(`/api/involvement?event_id=${eventId}`);
+    renderAdminParticipantsList(subs, eventId);
+  } catch {
+    container.innerHTML = `<p class="text-danger small">Errore durante il caricamento.</p>`;
+  }
+}
+
+function renderAdminParticipantsList(subs, eventId) {
+  const container = document.getElementById('adminInvParticipantsList');
+
+  if (!subs.length) {
+    container.innerHTML = `<p class="text-muted fst-italic text-center py-2">Nessun iscritto.</p>`;
+    return;
+  }
+
+  container.innerHTML = subs.map((sub) => {
+    const owner = allOwnersAdm.find((o) => String(o.id) === String(sub.quota_owner_id));
+    const name  = owner ? `${owner.name} ${owner.surname}` : `Socio #${sub.quota_owner_id}`;
+    const extras = sub.participants.filter(Boolean);
+    return `
+      <div class="d-flex align-items-start justify-content-between border rounded p-2 mb-2">
+        <div class="flex-grow-1 me-2">
+          <strong>${escHtml(name)}</strong>
+          ${extras.length ? `<span class="text-muted ms-2 small">${extras.map(p => escHtml(p)).join(', ')}</span>` : ''}
+          ${sub.duration ? `<br><small class="text-muted"><i class="bi bi-clock me-1"></i>${escHtml(sub.duration)}</small>` : ''}
+          ${sub.pranzo   ? `<br><small class="text-muted"><i class="bi bi-egg-fried me-1"></i>${escHtml(sub.pranzo)}</small>` : ''}
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0"
+            data-delete-adm-sub-id="${sub.id}" data-event-id="${eventId}" title="Elimina iscrizione">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
+      </div>`;
+  }).join('');
+}
+
+async function deleteAdminSubscription(subId, eventId) {
+  try {
+    await apiFetch(`/api/involvement/${subId}`, { method: 'DELETE' });
+    showToast('Iscrizione eliminata.', 'success');
+    await refreshAdminParticipantsList(eventId);
+    loadCalendarEvents(); // refresh colours on admin calendar
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+async function saveAdminSubscription() {
+  const ownerId = document.getElementById('adminInvQuotaOwner').value;
+  if (!ownerId) { showToast('Seleziona il partecipante.', 'warning'); return; }
+
+  const eventId = document.getElementById('adminInvEventId').value;
+  const participants = [...document.querySelectorAll('#adminParticipantsList .participant-name')]
+    .map((i) => i.value.trim()).filter(Boolean);
+
+  const body = {
+    event_id:       Number(eventId),
+    quota_owner_id: Number(ownerId),
+    participants,
+    duration: document.getElementById('adminInvDuration').value.trim() || null,
+    pranzo:   document.getElementById('adminInvPranzo').value.trim()   || null,
+  };
+
+  try {
+    await apiFetch('/api/involvement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    showToast('Iscrizione salvata.', 'success');
+    showAdminInvListPanel();
+    await refreshAdminParticipantsList(Number(eventId));
+    loadCalendarEvents();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+// Admin inv modal event listeners
+document.getElementById('adminPartecipaBtnInv').addEventListener('click', showAdminInvFormPanel);
+document.getElementById('adminBackToInvListBtn').addEventListener('click', async () => {
+  showAdminInvListPanel();
+  if (selectedAdmEvent) await refreshAdminParticipantsList(selectedAdmEvent.id);
+});
+document.getElementById('adminInvParticipantsList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-delete-adm-sub-id]');
+  if (!btn) return;
+  deleteAdminSubscription(btn.dataset.deleteAdmSubId, btn.dataset.eventId);
+});
+document.getElementById('adminAddParticipantBtn').addEventListener('click', addAdminParticipantRow);
+document.getElementById('adminParticipantsList').addEventListener('click', (e) => {
+  if (e.target.closest('.remove-participant')) e.target.closest('.participant-row')?.remove();
+});
+document.getElementById('adminClearInvFormBtn').addEventListener('click', clearAdminInvForm);
+document.getElementById('adminSaveInvBtn').addEventListener('click',      saveAdminSubscription);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: DESTINATARI (Recipients)
@@ -366,5 +534,5 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) =>
   bootstrap.Tooltip.getOrCreateInstance(el)
 );
 
-// Load Soci tab data immediately (it's the default active tab)
+// Load Membri tab data immediately (it's the default active tab)
 loadOwners().catch((err) => showToast(err.message, 'danger'));

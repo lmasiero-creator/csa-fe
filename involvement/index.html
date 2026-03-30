@@ -33,57 +33,84 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-secondary py-2 mb-3" id="subEventInfo"></div>
+          <input type="hidden" id="subEventId">
 
-          <form id="subscriptionForm" novalidate>
-            <input type="hidden" id="subEventId">
-
-            <div class="mb-3">
-              <label for="subQuotaOwner" class="form-label fw-semibold">
-                Chi sei? <span class="text-danger">*</span>
-              </label>
-              <select id="subQuotaOwner" class="form-select" required>
-                <option value="" disabled selected>Seleziona il tuo nome…</option>
-              </select>
-            </div>
-
-            <!-- Participants repeater -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">
-                Altri Partecipanti
-              </label>
-              <div id="participantsList">
-                <div class="input-group mb-2 participant-row">
-                  <input type="text" class="form-control participant-name" maxlength="256"
-                         placeholder="Nome e cognome partecipante">
-                  <button type="button" class="btn btn-outline-danger remove-participant"
-                          title="Rimuovi" tabindex="-1" aria-label="Rimuovi partecipante">
-                    <i class="bi bi-dash"></i>
-                  </button>
-                </div>
-              </div>
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="addParticipantBtn">
-                <i class="bi bi-plus"></i> Aggiungi partecipante
+          <!-- Panel A: list of existing subscriptions -->
+          <div id="invParticipantsPanel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="fw-semibold text-muted small">Iscritti a questa attività</span>
+              <button type="button" class="btn btn-primary btn-sm" id="partecipaBtnInv">
+                <i class="bi bi-plus-circle me-1"></i>Partecipa
               </button>
             </div>
+            <div id="invParticipantsList"></div>
+          </div>
 
-            <div class="mb-3">
-              <label for="subDuration" class="form-label fw-semibold">Durata</label>
-              <input type="text" id="subDuration" class="form-control" maxlength="512"
-                     placeholder="e.s. mattina/pomeriggio/tutto il giorno"
-                     data-bs-toggle="tooltip" title="e.s. mattina/pomeriggio/tutto il giorno">
-            </div>
+          <!-- Panel B: subscription form (hidden by default) -->
+          <div id="invFormPanel" class="d-none">
+            <form id="subscriptionForm" novalidate>
 
-            <div class="mb-3">
-              <label for="subPranzo" class="form-label fw-semibold">Pranzo</label>
-              <input type="text" id="subPranzo" class="form-control" maxlength="512"
-                     placeholder="Porto pranzo da condividere"
-                     data-bs-toggle="tooltip" title="Porto pranzo da condividere">
-            </div>
-          </form>
+              <div class="mb-3">
+                <label for="subQuotaOwnerPicker-search" class="form-label fw-semibold">
+                  Chi sei? <span class="text-danger">*</span>
+                </label>
+                <div id="subQuotaOwnerPicker"></div>
+                <input type="hidden" id="subQuotaOwner" name="subQuotaOwner" required>
+              </div>
+
+              <!-- Participants repeater -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Altri Partecipanti
+                </label>
+                <div id="participantsList">
+                  <div class="input-group mb-2 participant-row">
+                    <input type="text" class="form-control participant-name" maxlength="256"
+                           placeholder="Nome e cognome partecipante">
+                    <button type="button" class="btn btn-outline-danger remove-participant"
+                            title="Rimuovi" tabindex="-1" aria-label="Rimuovi partecipante">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="addParticipantBtn">
+                  <i class="bi bi-plus"></i> Aggiungi partecipante
+                </button>
+              </div>
+
+              <div class="mb-3">
+                <label for="subDuration" class="form-label fw-semibold">Durata</label>
+                <input type="text" id="subDuration" class="form-control" maxlength="512"
+                       placeholder="e.s. mattina/pomeriggio/tutto il giorno"
+                       data-bs-toggle="tooltip" title="e.s. mattina/pomeriggio/tutto il giorno">
+              </div>
+
+              <div class="mb-3">
+                <label for="subPranzo" class="form-label fw-semibold">Pranzo</label>
+                <input type="text" id="subPranzo" class="form-control" maxlength="512"
+                       placeholder="Porto pranzo da condividere"
+                       data-bs-toggle="tooltip" title="Porto pranzo da condividere">
+              </div>
+            </form>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" id="clearSubFormBtn">
-            <i class="bi bi-x-circle me-1"></i>Cancella
+
+        <!-- Footer: list view -->
+        <div class="modal-footer" id="invListFooter">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
+          </button>
+        </div>
+        <!-- Footer: form view -->
+        <div class="modal-footer d-none" id="invFormFooter">
+          <button type="button" class="btn btn-outline-secondary me-auto" id="clearSubFormBtn">
+            <i class="bi bi-eraser me-1"></i>Pulisci
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="backToInvListBtn">
+            <i class="bi bi-arrow-left me-1"></i>Lista
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
           <button type="button" class="btn btn-success" id="saveSubBtn">
             <i class="bi bi-check-lg me-1"></i>Salva

@@ -57,18 +57,10 @@
 
       <!-- Chi sei? — select from quota owners list -->
       <div class="mb-3">
-        <label for="quotaOwner" class="form-label fw-semibold">
+        <label for="quotaOwnerPicker-search" class="form-label fw-semibold">
           Chi sei? <span class="text-danger" aria-hidden="true">*</span>
         </label>
-        <select id="quotaOwner"
-                name="quota_owner_id"
-                class="form-select"
-                required
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Seleziona il tuo nome dall'elenco dei soci">
-          <option value="" disabled selected>Seleziona il tuo nome…</option>
-        </select>
+        <div id="quotaOwnerPicker"></div>
         <div class="form-text">
           La tua scelta viene ricordata su questo dispositivo.
         </div>

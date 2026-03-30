@@ -19,7 +19,7 @@
     <!-- ── Tabs ────────────────────────────────────────────────────────────── -->
     <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-soci"        data-bs-toggle="tab" data-bs-target="#pane-soci"        type="button" role="tab">Soci</button>
+        <button class="nav-link active" id="tab-soci"        data-bs-toggle="tab" data-bs-target="#pane-soci"        type="button" role="tab">Membri</button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link"        id="tab-calendario"  data-bs-toggle="tab" data-bs-target="#pane-calendario"  type="button" role="tab">Calendario</button>
@@ -31,11 +31,11 @@
 
     <div class="tab-content" id="adminTabContent">
 
-      <!-- ── Tab: Soci ─────────────────────────────────────────────────────── -->
+      <!-- ── Tab: Membri ─────────────────────────────────────────────────────── -->
       <div class="tab-pane fade show active" id="pane-soci" role="tabpanel">
         <div class="d-flex justify-content-end mb-3">
           <button class="btn btn-success btn-sm" id="addOwnerBtn">
-            <i class="bi bi-plus-lg me-1"></i>Aggiungi socio
+            <i class="bi bi-plus-lg me-1"></i>Aggiungi membro
           </button>
         </div>
         <div class="table-responsive">
@@ -93,7 +93,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="ownerModalTitle">Socio</h5>
+          <h5 class="modal-title" id="ownerModalTitle">Membro</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
         </div>
         <div class="modal-body">
@@ -144,8 +144,11 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" id="clearOwnerFormBtn">
-            <i class="bi bi-x-circle me-1"></i>Cancella
+          <button type="button" class="btn btn-outline-secondary me-auto" id="clearOwnerFormBtn">
+            <i class="bi bi-eraser me-1"></i>Pulisci
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
           <button type="button" class="btn btn-success" id="saveOwnerBtn">
             <i class="bi bi-check-lg me-1"></i>Salva
@@ -181,10 +184,10 @@
               </select>
             </div>
             <div class="mb-3">
-              <label for="eventDescription" class="form-label fw-semibold">Descrizione <span class="text-danger">*</span></label>
+              <label for="eventDescription" class="form-label fw-semibold">Descrizione</label>
               <textarea id="eventDescription" class="form-control" rows="3" maxlength="1024"
                         data-bs-toggle="tooltip" title="Es raccolta piselli. Consiglio: porta l'impermeabile"
-                        placeholder="Es raccolta piselli. Consiglio: porta l'impermeabile" required></textarea>
+                        placeholder="Es raccolta piselli. Consiglio: porta l'impermeabile"></textarea>
             </div>
 
             <!-- Delivery-only fields -->
@@ -207,10 +210,103 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" id="clearEventFormBtn">
-            <i class="bi bi-x-circle me-1"></i>Cancella
+          <button type="button" class="btn btn-outline-secondary me-auto" id="clearEventFormBtn">
+            <i class="bi bi-eraser me-1"></i>Pulisci
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
           <button type="button" class="btn btn-success" id="saveEventBtn">
+            <i class="bi bi-check-lg me-1"></i>Salva
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Involvement participants (admin) ──────────────────────────── -->
+  <div class="modal fade" id="adminInvModal" tabindex="-1" aria-labelledby="adminInvModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminInvModalTitle">Partecipanti attività</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-secondary py-2 mb-3" id="adminInvEventInfo"></div>
+          <input type="hidden" id="adminInvEventId">
+
+          <!-- Panel A: participants list -->
+          <div id="adminInvListPanel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="fw-semibold text-muted small">Iscritti a questa attività</span>
+              <button type="button" class="btn btn-primary btn-sm" id="adminPartecipaBtnInv">
+                <i class="bi bi-plus-circle me-1"></i>Partecipa
+              </button>
+            </div>
+            <div id="adminInvParticipantsList"></div>
+          </div>
+
+          <!-- Panel B: subscription form -->
+          <div id="adminInvFormPanel" class="d-none">
+            <div class="mb-3">
+              <label for="adminInvQuotaOwnerPicker-search" class="form-label fw-semibold">
+                Chi partecipa? <span class="text-danger">*</span>
+              </label>
+              <div id="adminInvQuotaOwnerPicker"></div>
+              <input type="hidden" id="adminInvQuotaOwner" required>
+            </div>
+
+            <!-- Participants repeater -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Altri Partecipanti</label>
+              <div id="adminParticipantsList">
+                <div class="input-group mb-2 participant-row">
+                  <input type="text" class="form-control participant-name" maxlength="256"
+                         placeholder="Nome e cognome partecipante">
+                  <button type="button" class="btn btn-outline-danger remove-participant"
+                          title="Rimuovi" tabindex="-1" aria-label="Rimuovi partecipante">
+                    <i class="bi bi-dash"></i>
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="adminAddParticipantBtn">
+                <i class="bi bi-plus"></i> Aggiungi partecipante
+              </button>
+            </div>
+
+            <div class="mb-3">
+              <label for="adminInvDuration" class="form-label fw-semibold">Durata</label>
+              <input type="text" id="adminInvDuration" class="form-control" maxlength="512"
+                     placeholder="e.s. mattina/pomeriggio/tutto il giorno">
+            </div>
+
+            <div class="mb-3">
+              <label for="adminInvPranzo" class="form-label fw-semibold">Pranzo</label>
+              <input type="text" id="adminInvPranzo" class="form-control" maxlength="512"
+                     placeholder="Porto pranzo da condividere">
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer: list view -->
+        <div class="modal-footer" id="adminInvListFooter">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
+          </button>
+        </div>
+        <!-- Footer: form view -->
+        <div class="modal-footer d-none" id="adminInvFormFooter">
+          <button type="button" class="btn btn-outline-secondary me-auto" id="adminClearInvFormBtn">
+            <i class="bi bi-eraser me-1"></i>Pulisci
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="adminBackToInvListBtn">
+            <i class="bi bi-arrow-left me-1"></i>Lista
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
+          </button>
+          <button type="button" class="btn btn-success" id="adminSaveInvBtn">
             <i class="bi bi-check-lg me-1"></i>Salva
           </button>
         </div>

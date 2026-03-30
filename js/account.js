@@ -15,8 +15,9 @@
  *   uses directly as the `src` of an <img> element — no separate file server needed.
  */
 
-import { API_BASE_URL } from './config.js';
-import { showToast }    from './layout.js';
+import { API_BASE_URL }    from './config.js';
+import { showToast }       from './layout.js';
+import { initOwnerPicker } from './owner-picker.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -27,14 +28,15 @@ const COOKIE_NAME        = 'csa_account_id';
 const COOKIE_MAX_AGE     = 60 * 60 * 24 * 365 * 10; // 10 years in seconds
 
 // ── DOM references ────────────────────────────────────────────────────────────
-const form             = document.getElementById('accountForm');
-const quotaOwnerSelect = document.getElementById('quotaOwner');
-const descInput        = document.getElementById('description');
-const photoInput       = document.getElementById('photoInput');
-const avatarEl         = document.getElementById('avatar');
-const descCounter      = document.getElementById('descCounter');
+const form        = document.getElementById('accountForm');
+const descInput   = document.getElementById('description');
+const photoInput  = document.getElementById('photoInput');
+const avatarEl    = document.getElementById('avatar');
+const descCounter = document.getElementById('descCounter');
 
 // ── State ─────────────────────────────────────────────────────────────────────
+/** All quota owners loaded from the backend (used for avatar-label lookup). */
+let allOwners        = [];
 /** File chosen by the user but not yet saved. */
 let pendingFile      = null;
 /** Object URL for the current avatar preview (revoked when no longer needed). */
@@ -122,20 +124,18 @@ async function loadQuotaOwners() {
     if (!res.ok) throw new Error();
 
     /** @type {{ id: number, name: string, surname: string }[]} */
-    const owners = await res.json();
+    allOwners = await res.json();
 
-    owners.forEach((owner) => {
-      const opt = document.createElement('option');
-      opt.value       = owner.id;
-      opt.textContent = `${owner.name} ${owner.surname}`.trim();
-      quotaOwnerSelect.appendChild(opt);
+    const savedId = getCookie(COOKIE_NAME);
+    initOwnerPicker('quotaOwnerPicker', allOwners, {
+      hiddenId:   'quotaOwner',
+      selectedId: savedId,
+      onSelect:   async (owner) => { await loadAccountForOwner(owner.id, owner); },
     });
 
-    // Restore previously chosen identity from cookie
-    const savedId = getCookie(COOKIE_NAME);
-    if (savedId && owners.some((o) => String(o.id) === savedId)) {
-      quotaOwnerSelect.value = savedId;
-      await loadAccountForOwner(savedId);
+    if (savedId && allOwners.some((o) => String(o.id) === savedId)) {
+      const found = allOwners.find((o) => String(o.id) === savedId);
+      await loadAccountForOwner(savedId, found);
     }
   } catch {
     // Backend not available during pure front-end development — silently ignore.
@@ -148,7 +148,7 @@ async function loadQuotaOwners() {
  * Fetch and render the profile for the given quota owner id.
  * @param {string|number} ownerId
  */
-async function loadAccountForOwner(ownerId) {
+async function loadAccountForOwner(ownerId, ownerObj = null) {
   // Reset any pending upload when switching owners
   if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
   pendingFile      = null;
@@ -161,9 +161,8 @@ async function loadAccountForOwner(ownerId) {
       // Owner exists in quota_owners but has no profile saved yet
       currentOwner    = { id: ownerId, name: '', surname: '', description: '', photo_url: null };
       descInput.value = '';
-      const label     = quotaOwnerSelect.selectedOptions[0]?.textContent ?? '';
-      const [n = '', s = ''] = label.split(' ');
-      renderAvatar(n, s, null);
+      const o = ownerObj ?? allOwners.find((x) => String(x.id) === String(ownerId));
+      renderAvatar(o?.name ?? '', o?.surname ?? '', null);
     } else if (res.ok) {
       currentOwner    = await res.json();
       descInput.value = currentOwner.description ?? '';
@@ -175,13 +174,6 @@ async function loadAccountForOwner(ownerId) {
     // Backend not available — silently ignore.
   }
 }
-
-// When the user picks a different identity, load their profile immediately
-quotaOwnerSelect.addEventListener('change', async () => {
-  const id = quotaOwnerSelect.value;
-  if (!id) return;
-  await loadAccountForOwner(id);
-});
 
 // ── Photo upload validation ───────────────────────────────────────────────────
 
@@ -234,7 +226,7 @@ function validateImageFile(file) {
 // ── Photo input handler ───────────────────────────────────────────────────────
 
 photoInput.addEventListener('change', async (e) => {
-  if (!quotaOwnerSelect.value) {
+  if (!document.getElementById('quotaOwner')?.value) {
     showToast('Seleziona prima il tuo nome.', 'warning');
     photoInput.value = '';
     return;
@@ -275,10 +267,10 @@ descInput.addEventListener('input', () => updateCounter(descInput, descCounter))
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const ownerId = quotaOwnerSelect.value;
+  const ownerId = document.getElementById('quotaOwner')?.value ?? '';
   if (!ownerId) {
     showToast('Seleziona prima il tuo nome.', 'warning');
-    quotaOwnerSelect.focus();
+    document.getElementById('quotaOwnerPicker-search')?.focus();
     return;
   }
 

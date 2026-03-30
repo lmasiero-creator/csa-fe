@@ -4,15 +4,17 @@
  * (disabled if the deadline for that delivery has passed).
  */
 
-import { API_BASE_URL } from './config.js';
-import { showToast }    from './layout.js';
+import { API_BASE_URL }    from './config.js';
+import { showToast }       from './layout.js';
+import { initOwnerPicker } from './owner-picker.js';
 
 // ── Cookie helper ─────────────────────────────────────────────────────────────
 function savedOwnerId() {
   const m = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
   return m ? decodeURIComponent(m.split('=')[1]) : null;
 }
-
+// ── State ─────────────────────────────────────────────────────────────────────
+let ownerPickerDel = null; // reference to the picker API
 // ── Deadline helper ───────────────────────────────────────────────────────────
 /**
  * Returns true when the deadline date is strictly before today (midnight local time).
@@ -31,17 +33,10 @@ async function loadOwners() {
     const res = await fetch(`${API_BASE_URL}/api/quota-owners`);
     if (!res.ok) return;
     const owners = await res.json();
-    const sel    = document.getElementById('deliveryQuotaOwner');
-    owners.forEach((o) => {
-      const opt = document.createElement('option');
-      opt.value       = o.id;
-      opt.textContent = `${o.name} ${o.surname}`;
-      sel.appendChild(opt);
+    ownerPickerDel = initOwnerPicker('deliveryQuotaOwnerPicker', owners, {
+      hiddenId:   'deliveryQuotaOwner',
+      selectedId: savedOwnerId(),
     });
-    const saved = savedOwnerId();
-    if (saved && owners.some((o) => String(o.id) === saved)) {
-      sel.value = saved;
-    }
   } catch { /* backend not available */ }
 }
 
@@ -97,8 +92,7 @@ function openDeliveryModal(ev) {
   document.getElementById('deliveryPoint').value    = ''; // reset
   document.getElementById('deliveryDescription').value = '';
   // Pre-select saved owner
-  const saved = savedOwnerId();
-  if (saved) document.getElementById('deliveryQuotaOwner').value = saved;
+  ownerPickerDel?.setValue(savedOwnerId());
   bootstrap.Modal.getOrCreateInstance(document.getElementById('deliveryModal')).show();
 }
 
@@ -106,17 +100,14 @@ function clearDeliveryForm() {
   document.getElementById('deliveryForm').reset();
   document.getElementById('deliveryDate').value = '';
   document.getElementById('deliveryEventId').value = '';
-  const saved = savedOwnerId();
-  if (saved) document.getElementById('deliveryQuotaOwner').value = saved;
+  ownerPickerDel?.setValue(savedOwnerId());
 }
 
 async function saveDeliveryChange() {
   const ownerId      = document.getElementById('deliveryQuotaOwner').value;
-  const delivPoint   = document.getElementById('deliveryPoint').value;
   const eventId      = document.getElementById('deliveryEventId').value;
 
   if (!ownerId)    { showToast('Seleziona il tuo nome.',             'warning'); return; }
-  if (!delivPoint) { showToast('Seleziona il punto di consegna.',    'warning'); return; }
 
   const body = {
     event_id:          Number(eventId),

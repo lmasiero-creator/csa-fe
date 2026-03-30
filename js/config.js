@@ -1,12 +1,19 @@
 /**
  * config.js — environment-specific constants shared across all JS modules.
  *
- * Before deploying to GitHub Pages, update BASE_PATH to match the repository
- * sub-path, e.g. '/csa-fe' for https://lmasiero-creator.github.io/csa-fe/
+ * No manual edits are needed when switching between local dev and production.
+ * Hostname detection is used to select the right values automatically.
+ *
+ * Local dev  : open via http://localhost or http://127.0.0.1 (e.g. npx serve)
+ * Production : served from GitHub Pages at https://lmasiero-creator.github.io/csa-fe/
  */
 
-/** Base path for all internal navigation links. Empty string for local dev. */
-export const BASE_PATH = '';
+const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
-/** URL of the Express backend. Update to the Render.com URL for production. */
-export const API_BASE_URL = 'http://localhost:3000';
+/** Base path for all internal navigation links. */
+export const BASE_PATH = isLocal ? '' : '/csa-fe';
+
+/** URL of the Express backend. */
+export const API_BASE_URL = isLocal
+  ? 'http://localhost:3000'
+  : 'https://csa-be.onrender.com';   // ← update once Render URL is known
