@@ -248,7 +248,7 @@ async function saveEvent() {
     showToast('Data e Tipo sono obbligatori.', 'warning'); return;
   }
   const body = {
-    date, type, description,
+    date, type, description: document.getElementById('eventDescription').value || null,
     delivery_point: type === 'del' ? document.getElementById('eventDeliveryPoint').value || null : null,
     deadline:       type === 'del' ? document.getElementById('eventDeadline').value || null : null,
   };
