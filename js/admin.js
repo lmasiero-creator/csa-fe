@@ -190,7 +190,8 @@ function initCalendar() {
     events: [],
     dateClick: (info) => openEventModal({ date: info.dateStr }),
     eventClick: (info) => {
-      const ev = info.event.extendedProps;
+      const ev = allEvents.find((e) => String(e.id) === info.event.id);
+      if (!ev) return;
       if (ev.type === 'inv') { openAdminInvModal(ev); } else { openEventModal(ev); }
     },
   });
@@ -198,13 +199,20 @@ function initCalendar() {
   loadCalendarEvents();
 }
 
+function toDateStr(v) {
+  if (!v) return '';
+  if (typeof v === 'string') return v.slice(0, 10);
+  const d = new Date(v);
+  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+}
+
 function openEventModal(ev = {}) {
   document.getElementById('eventEditId').value           = ev.id ?? '';
-  document.getElementById('eventDate').value             = ev.date ?? '';
+  document.getElementById('eventDate').value             = toDateStr(ev.date);
   document.getElementById('eventType').value             = ev.type ?? '';
   document.getElementById('eventDescription').value      = ev.description ?? '';
   document.getElementById('eventDeliveryPoint').value    = ev.delivery_point ?? '';
-  document.getElementById('eventDeadline').value         = ev.deadline ?? '';
+  document.getElementById('eventDeadline').value         = toDateStr(ev.deadline);
   document.getElementById('eventModalTitle').textContent = ev.id ? 'Modifica evento' : 'Aggiungi evento';
   toggleDeliveryFields(ev.type === 'del');
   bootstrap.Modal.getOrCreateInstance(document.getElementById('eventModal')).show();
