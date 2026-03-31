@@ -22,8 +22,7 @@ export const API_BASE_URL = isLocal
 
 const SLOW_THRESHOLD_MS = 3000;
 export const WAKEUP_MSG =
-  'Stiamo usando piattaforme gratuite per quest\'app. ' +
-  'Dopo un periodo di inattività ci possono volere anche 50 secondi per riattivare il servizio.';
+  'Quest\'app usa piattaforme gratuite che sospendono i servizi dopo un periodo di inattività. Attendi ancora qualche secondo per il ripristino...';
 
 let _bannerEl = null;
 let _activeTimer = null;
