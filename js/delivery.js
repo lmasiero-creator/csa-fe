@@ -19,6 +19,11 @@ function formatDateIT(isoStr) {
 }
 
 // ── Cookie helper ──────────────────────────────────────────────────────────────
+function savedOwnerId() {
+  const m = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
+  return m ? decodeURIComponent(m.split('=')[1]) : null;
+}
+
 let ownerPickerDel = null; // reference to the picker API
 // ── Deadline helper ───────────────────────────────────────────────────────────
 /**
@@ -117,14 +122,16 @@ function clearDeliveryForm() {
 }
 
 async function saveDeliveryChange() {
-  const ownerId      = document.getElementById('deliveryQuotaOwner').value;
-  const eventId      = document.getElementById('deliveryEventId').value;
+  const ownerId   = document.getElementById('deliveryQuotaOwner').value;
+  const eventId   = document.getElementById('deliveryEventId').value;
+  const delivPoint = document.getElementById('deliveryPoint').value;
 
-  if (!ownerId)    { showToast('Seleziona il tuo nome.',             'warning'); return; }
+  if (!ownerId)    { showToast('Seleziona il tuo nome.',              'warning'); return; }
+  if (!delivPoint) { showToast('Seleziona il punto di distribuzione.', 'warning'); return; }
 
   const body = {
-    event_id:          Number(eventId),
-    quota_owner_id:    Number(ownerId),
+    event_id:           Number(eventId),
+    quota_owner_id:     Number(ownerId),
     new_delivery_point: delivPoint,
     description:       document.getElementById('deliveryDescription').value.trim() || null,
   };

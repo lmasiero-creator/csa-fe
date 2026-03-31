@@ -248,11 +248,20 @@ photoInput.addEventListener('change', async (e) => {
   }
 });
 
-// Clicking the avatar circle (or pressing Enter/Space) triggers the file picker
-avatarEl.addEventListener('click',   () => photoInput.click());
+// Clicking the avatar circle or the overlay (or pressing Enter/Space) triggers the file picker
+avatarEl.addEventListener('click', () => photoInput.click());
 avatarEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); photoInput.click(); }
 });
+
+// The overlay sits above the avatar when visible; make it interactive too.
+const avatarOverlay = document.querySelector('.avatar-overlay');
+if (avatarOverlay) {
+  avatarOverlay.addEventListener('click', () => photoInput.click());
+  avatarOverlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); photoInput.click(); }
+  });
+}
 
 // ── Character counter ─────────────────────────────────────────────────────────
 
