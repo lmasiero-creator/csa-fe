@@ -37,7 +37,7 @@ async function loadOwners() {
 function eventToFC(ev) {
   const bg     = ev.participant_count > 0 ? '#198754' : '#dc3545';
   const border = ev.participant_count > 0 ? '#146c43' : '#b02a37';
-  return { id: String(ev.id), title: ev.description, start: ev.date,
+  return { id: String(ev.id), title: ev.description, start: ev.date, allDay: true,
            backgroundColor: bg, borderColor: border, extendedProps: { ...ev } };
 }
 
@@ -51,6 +51,11 @@ async function loadAndRenderCalendar() {
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       noEventsContent: 'Nessuna attività programmata',
       events: events.map(eventToFC),
+      eventDidMount: (info) => {
+        new bootstrap.Tooltip(info.el, {
+          title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
+        });
+      },
       eventClick: (info) => openSubscriptionModal(info.event.extendedProps),
     });
     invCalendar.render();

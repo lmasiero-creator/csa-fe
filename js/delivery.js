@@ -51,6 +51,7 @@ function eventToFC(ev) {
     id:              String(ev.id),
     title:           label ? `${ev.description} (${label})` : ev.description,
     start:           ev.date,
+    allDay:          true,
     backgroundColor: expired ? '#6c757d' : '#0d6efd',
     borderColor:     expired ? '#565e64' : '#0a58ca',
     classNames:      expired ? ['fc-event-expired'] : [],
@@ -69,6 +70,11 @@ async function loadAndRenderCalendar() {
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       noEventsContent: 'Nessuna distribuzione programmata',
       events: events.map(eventToFC),
+      eventDidMount: (info) => {
+        new bootstrap.Tooltip(info.el, {
+          title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
+        });
+      },
       eventClick: (info) => {
         const ev = info.event.extendedProps;
         if (ev.expired) {

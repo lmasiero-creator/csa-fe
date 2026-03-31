@@ -157,6 +157,7 @@ function eventToFC(ev) {
     id: String(ev.id),
     title: ev.description,
     start: ev.date,
+    allDay: true,
     backgroundColor: bg,
     borderColor: border,
     extendedProps: { ...ev },
@@ -188,6 +189,11 @@ function initCalendar() {
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
     noEventsContent: 'Nessun evento',
     events: [],
+    eventDidMount: (info) => {
+      new bootstrap.Tooltip(info.el, {
+        title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
+      });
+    },
     dateClick: (info) => openEventModal({ date: info.dateStr }),
     eventClick: (info) => {
       const ev = allEvents.find((e) => String(e.id) === info.event.id);
