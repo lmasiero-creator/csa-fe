@@ -8,12 +8,17 @@ import { API_BASE_URL, apiFetch } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
 
-// ── Cookie helper ─────────────────────────────────────────────────────────────
-function savedOwnerId() {
-  const m = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
-  return m ? decodeURIComponent(m.split('=')[1]) : null;
+// ── Date helper ────────────────────────────────────────────────────────────────
+function formatDateIT(isoStr) {
+  if (!isoStr) return '';
+  const [datePart, timePart] = String(isoStr).split('T');
+  if (!datePart) return isoStr;
+  const [y, mo, d] = datePart.split('-');
+  const hhmm = timePart ? timePart.slice(0, 5) : '';
+  return hhmm ? `${d}/${mo}/${y} ${hhmm}` : `${d}/${mo}/${y}`;
 }
-// ── State ─────────────────────────────────────────────────────────────────────
+
+// ── Cookie helper ──────────────────────────────────────────────────────────────
 let ownerPickerDel = null; // reference to the picker API
 // ── Deadline helper ───────────────────────────────────────────────────────────
 /**
@@ -66,6 +71,9 @@ async function loadAndRenderCalendar() {
     const events = await res.json();
 
     const calendar = new FullCalendar.Calendar(document.getElementById('deliveryCalendar'), {
+      locale:      'it',
+      firstDay:    1,
+      timeZone:    'Europe/Rome',
       initialView: 'listMonth',
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       noEventsContent: 'Nessuna distribuzione programmata',
@@ -94,7 +102,7 @@ async function loadAndRenderCalendar() {
 
 function openDeliveryModal(ev) {
   document.getElementById('deliveryEventId').value  = ev.id;
-  document.getElementById('deliveryDate').value     = ev.date;
+  document.getElementById('deliveryDate').value     = formatDateIT(ev.date);
   document.getElementById('deliveryPoint').value    = ''; // reset
   document.getElementById('deliveryDescription').value = '';
   // Pre-select saved owner

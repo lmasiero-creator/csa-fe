@@ -12,7 +12,15 @@ let selectedEvent  = null; // extendedProps of the clicked FullCalendar event
 let ownerPickerInv = null; // reference to the picker API
 let allOwnersInv   = [];   // quota owners list for name lookup in participants view
 let invCalendar    = null; // FullCalendar instance (stored to refresh colors)
-
+// ── Date helper ────────────────────────────────────────────────────────────────
+function formatDateIT(isoStr) {
+  if (!isoStr) return '';
+  const [datePart, timePart] = String(isoStr).split('T');
+  if (!datePart) return isoStr;
+  const [y, mo, d] = datePart.split('-');
+  const hhmm = timePart ? timePart.slice(0, 5) : '';
+  return hhmm ? `${d}/${mo}/${y} ${hhmm}` : `${d}/${mo}/${y}`;
+}
 // ── Cookie helper ─────────────────────────────────────────────────────────────
 function savedOwnerId() {
   const m = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
@@ -47,6 +55,9 @@ async function loadAndRenderCalendar() {
     if (!res.ok) throw new Error();
     const events = await res.json();
     invCalendar = new FullCalendar.Calendar(document.getElementById('involvementCalendar'), {
+      locale:      'it',
+      firstDay:    1,
+      timeZone:    'Europe/Rome',
       initialView: 'listMonth',
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       noEventsContent: 'Nessuna attività programmata',
@@ -156,7 +167,7 @@ async function refreshInvCalendar() {
 async function openSubscriptionModal(ev) {
   selectedEvent = ev;
   document.getElementById('subEventId').value       = ev.id;
-  document.getElementById('subEventInfo').textContent = `${ev.date}  —  ${ev.description}`;
+  document.getElementById('subEventInfo').textContent = `${formatDateIT(ev.date)}  —  ${ev.description}`;
   showInvListPanel();
   bootstrap.Modal.getOrCreateInstance(document.getElementById('subscriptionModal')).show();
   await refreshInvParticipantsList(ev.id);

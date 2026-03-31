@@ -26,6 +26,56 @@ let allOwnersAdm     = [];   // cached owners for the admin inv modal name looku
 let ownerPickerAdm   = null; // picker API reference
 let selectedAdmEvent = null; // extendedProps of the clicked inv event
 
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Format an ISO datetime string (e.g. '2026-04-15T09:00') as Italian dd/mm/yyyy hh:mm.
+ * Treats the input as a Rome-local value (no timezone conversion).
+ */
+function formatDateIT(isoStr) {
+  if (!isoStr) return '';
+  const s = String(isoStr);
+  const [datePart, timePart] = s.split('T');
+  if (!datePart) return s;
+  const [y, mo, d] = datePart.split('-');
+  const hhmm = timePart ? timePart.slice(0, 5) : '';
+  return hhmm ? `${d}/${mo}/${y} ${hhmm}` : `${d}/${mo}/${y}`;
+}
+
+// ── Flatpickr date/time pickers ───────────────────────────────────────────────
+
+// Common flatpickr options for event date and deadline
+const FP_OPTS = {
+  enableTime:      true,
+  time_24hr:       true,
+  locale:          'it',
+  altInput:        true,
+  altFormat:       'd/m/Y H:i',     // shown to the user
+  dateFormat:      'Y-m-dTH:i:S',  // stored in hidden input → sent to backend as ISO
+  minuteIncrement: 15,
+};
+
+let fpEventDate     = null;
+let fpEventDeadline = null;
+
+// Initialise pickers once (DOM elements exist from page load)
+fpEventDate = flatpickr('#eventDate', {
+  ...FP_OPTS,
+  defaultHour: 9,
+  onChange: (selected) => {
+    if (document.getElementById('eventType').value === 'del' && selected.length) {
+      const d = new Date(selected[0]);
+      d.setDate(d.getDate() - 2);
+      fpEventDeadline?.setDate(d, false);
+    }
+  },
+});
+
+fpEventDeadline = flatpickr('#eventDeadline', {
+  ...FP_OPTS,
+  defaultHour: 22,
+});
+
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 function savedOwnerId() {
@@ -185,6 +235,9 @@ function initCalendar() {
   calendarLoaded = true;
 
   calendarInstance = new FullCalendar.Calendar(document.getElementById('adminCalendar'), {
+    locale:      'it',
+    firstDay:    1,          // Monday
+    timeZone:    'Europe/Rome',
     initialView: 'listMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
     noEventsContent: 'Nessun evento',
@@ -205,20 +258,13 @@ function initCalendar() {
   loadCalendarEvents();
 }
 
-function toDateStr(v) {
-  if (!v) return '';
-  if (typeof v === 'string') return v.slice(0, 10);
-  const d = new Date(v);
-  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
-}
-
 function openEventModal(ev = {}) {
   document.getElementById('eventEditId').value           = ev.id ?? '';
-  document.getElementById('eventDate').value             = toDateStr(ev.date);
+  fpEventDate?.setDate(ev.date     ? ev.date     : null, false);
+  fpEventDeadline?.setDate(ev.deadline ? ev.deadline : null, false);
   document.getElementById('eventType').value             = ev.type ?? '';
   document.getElementById('eventDescription').value      = ev.description ?? '';
   document.getElementById('eventDeliveryPoint').value    = ev.delivery_point ?? '';
-  document.getElementById('eventDeadline').value         = toDateStr(ev.deadline);
   document.getElementById('eventModalTitle').textContent = ev.id ? 'Modifica evento' : 'Aggiungi evento';
   toggleDeliveryFields(ev.type === 'del');
   bootstrap.Modal.getOrCreateInstance(document.getElementById('eventModal')).show();
@@ -227,6 +273,8 @@ function openEventModal(ev = {}) {
 function clearEventForm() {
   document.getElementById('eventEditId').value = '';
   document.getElementById('eventForm').reset();
+  fpEventDate?.clear();
+  fpEventDeadline?.clear();
   toggleDeliveryFields(false);
 }
 
@@ -236,22 +284,14 @@ function toggleDeliveryFields(show) {
 
 document.getElementById('eventType').addEventListener('change', (e) => {
   toggleDeliveryFields(e.target.value === 'del');
-  // Auto-fill default deadline (date − 2 days) when type is delivery
+  // Auto-fill deadline when type changes to delivery and date is already set
   if (e.target.value === 'del') {
-    const dateVal = document.getElementById('eventDate').value;
-    if (dateVal && !document.getElementById('eventDeadline').value) {
-      const d = new Date(dateVal);
+    const selected = fpEventDate?.selectedDates;
+    if (selected?.length && !fpEventDeadline?.selectedDates.length) {
+      const d = new Date(selected[0]);
       d.setDate(d.getDate() - 2);
-      document.getElementById('eventDeadline').value = d.toISOString().split('T')[0];
+      fpEventDeadline?.setDate(d, false);
     }
-  }
-});
-
-document.getElementById('eventDate').addEventListener('change', () => {
-  if (document.getElementById('eventType').value === 'del') {
-    const d = new Date(document.getElementById('eventDate').value);
-    d.setDate(d.getDate() - 2);
-    document.getElementById('eventDeadline').value = d.toISOString().split('T')[0];
   }
 });
 
@@ -340,7 +380,7 @@ function addAdminParticipantRow() {
 async function openAdminInvModal(ev) {
   selectedAdmEvent = ev;
   document.getElementById('adminInvEventId').value       = ev.id;
-  document.getElementById('adminInvEventInfo').textContent = `${ev.date}  —  ${ev.description}`;
+    document.getElementById('adminInvEventInfo').textContent = `${formatDateIT(ev.date)}  —  ${ev.description}`;
   document.getElementById('adminInvModalTitle').textContent = `Partecipanti — ${ev.description}`;
   showAdminInvListPanel();
   // Lazy-load owners once
