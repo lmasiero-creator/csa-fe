@@ -3,7 +3,7 @@
  * Shows involvement events; clicking opens a subscription form.
  */
 
-import { API_BASE_URL }    from './config.js';
+import { API_BASE_URL, apiFetch } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
 
@@ -22,7 +22,7 @@ function savedOwnerId() {
 // ── Load quota owners into subscription modal select ─────────────────────────
 async function loadOwners() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/quota-owners`);
+    const res = await apiFetch('/api/quota-owners');
     if (!res.ok) return;
     allOwnersInv = await res.json();
     ownerPickerInv = initOwnerPicker('subQuotaOwnerPicker', allOwnersInv, {
@@ -43,7 +43,7 @@ function eventToFC(ev) {
 
 async function loadAndRenderCalendar() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/events?type=inv`);
+    const res = await apiFetch('/api/events?type=inv');
     if (!res.ok) throw new Error();
     const events = await res.json();
     invCalendar = new FullCalendar.Calendar(document.getElementById('involvementCalendar'), {
@@ -88,7 +88,7 @@ async function refreshInvParticipantsList(eventId) {
       <span class="ms-2">Caricamento…</span>
     </div>`;
   try {
-    const res = await fetch(`${API_BASE_URL}/api/involvement?event_id=${eventId}`);
+    const res = await apiFetch(`/api/involvement?event_id=${eventId}`);
     if (!res.ok) throw new Error();
     renderInvParticipantsList(await res.json(), eventId);
   } catch {
@@ -128,7 +128,7 @@ function renderInvParticipantsList(subs, eventId) {
 
 async function deleteInvSubscription(subId, eventId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/involvement/${subId}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/involvement/${subId}`, { method: 'DELETE' });
     if (!res.ok && res.status !== 404) throw new Error();
     showToast('Iscrizione eliminata.', 'success');
     await refreshInvParticipantsList(eventId);
@@ -140,7 +140,7 @@ async function deleteInvSubscription(subId, eventId) {
 
 async function refreshInvCalendar() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/events?type=inv`);
+    const res = await apiFetch('/api/events?type=inv');
     if (!res.ok) return;
     const events = await res.json();
     invCalendar?.removeAllEvents();
@@ -197,7 +197,7 @@ async function saveSubscription() {
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/involvement`, {
+    const res = await apiFetch('/api/involvement', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

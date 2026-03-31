@@ -3,7 +3,7 @@
  * Manages three tabs: Membri (quota owners), Calendario (events), Destinatari (recipients).
  */
 
-import { API_BASE_URL }    from './config.js';
+import { API_BASE_URL, apiFetch as apiFetchRaw } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
 
@@ -36,7 +36,7 @@ function savedOwnerId() {
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, options);
+  const res = await apiFetchRaw(path, options);
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));
     throw new Error(payload.message ?? `Errore ${res.status}`);

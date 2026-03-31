@@ -15,7 +15,7 @@
  *   uses directly as the `src` of an <img> element — no separate file server needed.
  */
 
-import { API_BASE_URL }    from './config.js';
+import { API_BASE_URL, apiFetch } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
 
@@ -120,7 +120,7 @@ function renderAvatar(name, surname, photoUrl) {
  */
 async function loadQuotaOwners() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/quota-owners`);
+    const res = await apiFetch('/api/quota-owners');
     if (!res.ok) throw new Error();
 
     /** @type {{ id: number, name: string, surname: string }[]} */
@@ -155,7 +155,7 @@ async function loadAccountForOwner(ownerId, ownerObj = null) {
   photoInput.value = '';
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/account/${ownerId}`);
+    const res = await apiFetch(`/api/account/${ownerId}`);
 
     if (res.status === 404) {
       // Owner exists in quota_owners but has no profile saved yet
@@ -279,7 +279,7 @@ form.addEventListener('submit', async (e) => {
   if (pendingFile) body.append('photo', pendingFile);
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/account/${ownerId}`, {
+    const res = await apiFetch(`/api/account/${ownerId}`, {
       method: 'POST',
       body,
     });

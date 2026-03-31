@@ -4,7 +4,7 @@
  * (disabled if the deadline for that delivery has passed).
  */
 
-import { API_BASE_URL }    from './config.js';
+import { API_BASE_URL, apiFetch } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
 
@@ -30,7 +30,7 @@ function isDeadlinePassed(deadline) {
 // ── Load quota owners ─────────────────────────────────────────────────────────
 async function loadOwners() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/quota-owners`);
+    const res = await apiFetch('/api/quota-owners');
     if (!res.ok) return;
     const owners = await res.json();
     ownerPickerDel = initOwnerPicker('deliveryQuotaOwnerPicker', owners, {
@@ -60,7 +60,7 @@ function eventToFC(ev) {
 
 async function loadAndRenderCalendar() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/events?type=del`);
+    const res = await apiFetch('/api/events?type=del');
     if (!res.ok) throw new Error();
     const events = await res.json();
 
@@ -117,7 +117,7 @@ async function saveDeliveryChange() {
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/delivery-changes`, {
+    const res = await apiFetch('/api/delivery-changes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

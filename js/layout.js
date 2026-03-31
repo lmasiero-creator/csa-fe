@@ -7,7 +7,7 @@
  *   showToast(message, type?) — display a Bootstrap toast notification.
  */
 
-import { BASE_PATH, API_BASE_URL } from './config.js';
+import { BASE_PATH, API_BASE_URL, WAKEUP_MSG } from './config.js';
 
 // ── Shared navigation bar ────────────────────────────────────────────────────
 const headerRoot = document.getElementById('header-root');
@@ -49,7 +49,7 @@ function navHashColor(str) {
   }
 
   // Try profile first (may include a photo)
-  fetch(`${API_BASE_URL}/api/account/${ownerId}`)
+  import('./config.js').then(({ apiFetch }) => apiFetch(`/api/account/${ownerId}`))
     .then((r) => r.ok ? r.json() : Promise.reject(r.status))
     .then(({ name, surname, photo_data }) => {
       if (photo_data) {
@@ -61,7 +61,7 @@ function navHashColor(str) {
     })
     .catch(() => {
       // No profile saved yet — fall back to quota owner name
-      fetch(`${API_BASE_URL}/api/quota-owners/${ownerId}`)
+      import('./config.js').then(({ apiFetch }) => apiFetch(`/api/quota-owners/${ownerId}`))
         .then((r) => r.ok ? r.json() : Promise.reject())
         .then(({ name, surname }) => renderInitials(name, surname))
         .catch(() => { /* backend offline — keep default icon */ });
@@ -85,6 +85,14 @@ if (!document.getElementById('appToast')) {
                   aria-label="Chiudi"></button>
         </div>
       </div>
+    </div>`);
+}
+
+// ── Wakeup banner (injected once, hidden by default) ───────────────────────────
+if (!document.getElementById('wakeupBanner')) {
+  document.body.insertAdjacentHTML('afterbegin', `
+    <div id="wakeupBanner" class="d-none alert alert-warning alert-dismissible text-center small py-2 px-3 mb-0 rounded-0 border-0 border-bottom" role="alert" style="z-index:1100;position:relative">
+      <i class="bi bi-hourglass-split me-1"></i>${WAKEUP_MSG}
     </div>`);
 }
 
