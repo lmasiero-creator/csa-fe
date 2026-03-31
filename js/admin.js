@@ -207,7 +207,6 @@ function eventToFC(ev) {
     id: String(ev.id),
     title: ev.description,
     start: ev.date,
-    allDay: true,
     backgroundColor: bg,
     borderColor: border,
     extendedProps: { ...ev },

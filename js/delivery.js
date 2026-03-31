@@ -56,7 +56,6 @@ function eventToFC(ev) {
     id:              String(ev.id),
     title:           label ? `${ev.description} (${label})` : ev.description,
     start:           ev.date,
-    allDay:          true,
     backgroundColor: expired ? '#6c757d' : '#0d6efd',
     borderColor:     expired ? '#565e64' : '#0a58ca',
     classNames:      expired ? ['fc-event-expired'] : [],

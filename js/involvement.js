@@ -45,7 +45,7 @@ async function loadOwners() {
 function eventToFC(ev) {
   const bg     = ev.participant_count > 0 ? '#198754' : '#dc3545';
   const border = ev.participant_count > 0 ? '#146c43' : '#b02a37';
-  return { id: String(ev.id), title: ev.description, start: ev.date, allDay: true,
+  return { id: String(ev.id), title: ev.description, start: ev.date,
            backgroundColor: bg, borderColor: border, extendedProps: { ...ev } };
 }
 
