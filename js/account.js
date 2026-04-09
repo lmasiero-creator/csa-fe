@@ -263,6 +263,36 @@ if (avatarOverlay) {
   });
 }
 
+// ── Clear / reset account ───────────────────────────────────────────────────
+
+/**
+ * Delete the identity cookie and reset all page state without reloading.
+ */
+function resetAccount() {
+  // Expire the cookie immediately
+  document.cookie = `${COOKIE_NAME}=; max-age=0; path=/; SameSite=Lax`;
+
+  // Clear in-memory state
+  if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
+  pendingFile  = null;
+  currentOwner = null;
+  photoInput.value = '';
+  descInput.value  = '';
+  updateCounter(descInput, descCounter);
+  renderAvatar('', '', null);
+
+  // Re-render the owner picker with no selection
+  initOwnerPicker('quotaOwnerPicker', allOwners, {
+    hiddenId:   'quotaOwner',
+    selectedId: null,
+    onSelect:   async (owner) => { await loadAccountForOwner(owner.id, owner); },
+  });
+
+  showToast('Dati account rimossi da questo dispositivo.', 'info');
+}
+
+document.getElementById('clearAccountBtn')?.addEventListener('click', resetAccount);
+
 // ── Photo input tooltip (mouseover) ───────────────────────────────────────
 // Show a parameterized tooltip describing constraints when hovering the file input.
 let photoTooltip = null;
