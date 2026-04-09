@@ -22,8 +22,8 @@ import { initOwnerPicker } from './owner-picker.js';
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 const MAX_FILE_SIZE      = 5 * 1024 * 1024;   // 5 MB
-const MIN_WIDTH          = 640;
-const MIN_HEIGHT         = 320;
+const MIN_WIDTH          = 150;
+const MIN_HEIGHT         = 150;
 const COOKIE_NAME        = 'csa_account_id';
 const COOKIE_MAX_AGE     = 60 * 60 * 24 * 365 * 10; // 10 years in seconds
 
@@ -262,6 +262,32 @@ if (avatarOverlay) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); photoInput.click(); }
   });
 }
+
+// ── Photo input tooltip (mouseover) ───────────────────────────────────────
+// Show a parameterized tooltip describing constraints when hovering the file input.
+let photoTooltip = null;
+avatarOverlay.addEventListener('mouseover', () => {
+  const mb = MAX_FILE_SIZE / 1024 / 1024;
+  const mbStr = Number.isInteger(mb) ? `${mb} MB` : `${mb.toFixed(1)} MB`;
+  const formats = ALLOWED_EXTENSIONS.join(', ').toUpperCase();
+  const content =
+    `Minimo: ${MIN_HEIGHT}×${MIN_WIDTH} px<br>` +
+    `Formati accettati: ${formats}<br>` +
+    `Dimensione massima: ${mbStr}`;
+
+  if (photoTooltip) { photoTooltip.dispose(); photoTooltip = null; }
+  photoTooltip = new bootstrap.Tooltip(avatarOverlay, {
+    title: content,
+    html: true,
+    trigger: 'manual',
+    customClass: 'photo-tooltip'
+  });
+  photoTooltip.show();
+});
+
+avatarOverlay.addEventListener('mouseout', () => {
+  if (photoTooltip) { photoTooltip.hide(); photoTooltip.dispose(); photoTooltip = null; }
+});
 
 // ── Character counter ─────────────────────────────────────────────────────────
 

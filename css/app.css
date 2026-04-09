@@ -106,3 +106,9 @@ body {
 .page-title {
   font-weight: 600;
 }
+
+/* Wider tooltip for photo input help text (50% wider than bootstrap default 200px) */
+.photo-tooltip .tooltip-inner {
+  max-width: 300px;
+  white-space: normal;
+}
