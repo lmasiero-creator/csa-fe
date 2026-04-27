@@ -131,8 +131,9 @@ function renderInvParticipantsList(subs, eventId) {
         <div class="flex-grow-1 me-2">
           <strong>${escHtml(name)}</strong>
           ${extras.length ? `<span class="text-muted ms-2 small">${extras.map(p => escHtml(p)).join(', ')}</span>` : ''}
-          ${sub.duration ? `<br><small class="text-muted"><i class="bi bi-clock me-1"></i>${escHtml(sub.duration)}</small>` : ''}
-          ${sub.pranzo   ? `<br><small class="text-muted"><i class="bi bi-egg-fried me-1"></i>${escHtml(sub.pranzo)}</small>` : ''}
+          ${sub.duration        ? `<br><small class="text-muted"><i class="bi bi-clock me-1"></i>${escHtml(sub.duration)}</small>` : ''}
+          ${sub.pranzo          ? `<br><small class="text-muted"><i class="bi bi-egg-fried me-1"></i>${escHtml(sub.pranzo)}</small>` : ''}
+          ${sub.mezzo_trasporto ? `<br><small class="text-muted"><i class="bi bi-car-front me-1"></i>${escHtml(sub.mezzo_trasporto)}</small>` : ''}
         </div>
         ${canDelete ? `<button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0"
             data-delete-sub-id="${sub.id}" data-event-id="${eventId}" title="Elimina iscrizione">
@@ -181,8 +182,9 @@ function clearSubForm() {
   const list = document.getElementById('participantsList');
   list.innerHTML = '';
   addParticipantRow();
-  document.getElementById('subDuration').value = '';
-  document.getElementById('subPranzo').value   = '';
+  document.getElementById('subDuration').value       = '';
+  document.getElementById('subPranzo').value         = '';
+  document.getElementById('subMezzoTrasporto').value = '';
 }
 
 function addParticipantRow() {
@@ -208,8 +210,9 @@ async function saveSubscription() {
     event_id:       Number(document.getElementById('subEventId').value),
     quota_owner_id: Number(ownerId),
     participants,
-    duration: document.getElementById('subDuration').value.trim() || null,
-    pranzo:   document.getElementById('subPranzo').value.trim()   || null,
+    duration:         document.getElementById('subDuration').value.trim()       || null,
+    pranzo:           document.getElementById('subPranzo').value.trim()         || null,
+    mezzo_trasporto:  document.getElementById('subMezzoTrasporto').value.trim() || null,
   };
 
   try {
