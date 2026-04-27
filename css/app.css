@@ -94,6 +94,29 @@ body {
   border-color: #146c43 !important;
 }
 
+/* ── Calendar: day cells and day numbers are not clickable ─────────────────────*/
+
+.fc .fc-daygrid-day,
+.fc .fc-daygrid-day-frame,
+.fc .fc-col-header-cell {
+  cursor: default !important;
+}
+
+/* FullCalendar renders day numbers and list-view day headers as <a> tags — strip link styling */
+.fc .fc-daygrid-day-number,
+.fc a.fc-list-day-text,
+.fc a.fc-list-day-side-text {
+  cursor: default !important;
+  text-decoration: none !important;
+  pointer-events: none;
+}
+
+/* ── Calendar: events are clickable ───────────────────────────────────────────*/
+
+.fc .fc-event {
+  cursor: pointer !important;
+}
+
 /* ── Expired delivery events ───────────────────────────────────────────────────*/
 
 .fc-event-expired {
