@@ -271,7 +271,11 @@ function initCalendar() {
     eventClick: (info) => {
       const ev = allEvents.find((e) => String(e.id) === info.event.id);
       if (!ev) return;
-      openEventModal(ev);
+      if (ev.type === 'inv') {
+        openAdminInvModal(ev);
+      } else {
+        openEventModal(ev);
+      }
     },
   });
   calendarInstance.render();
@@ -287,6 +291,9 @@ function openEventModal(ev = {}) {
   document.getElementById('eventDeliveryPoint').value    = ev.delivery_point ?? '';
   document.getElementById('eventModalTitle').textContent = ev.id ? 'Modifica evento' : 'Aggiungi evento';
   toggleDeliveryFields(ev.type === 'del');
+  // Show "Lista richieste" button only when editing an existing delivery event
+  const listBtn = document.getElementById('listDeliveryChangesBtn');
+  listBtn.classList.toggle('d-none', !(ev.id && ev.type === 'del'));
   bootstrap.Modal.getOrCreateInstance(document.getElementById('eventModal')).show();
 }
 
@@ -345,6 +352,11 @@ async function saveEvent() {
 document.getElementById('addEventBtn').addEventListener('click',      () => openEventModal());
 document.getElementById('clearEventFormBtn').addEventListener('click', clearEventForm);
 document.getElementById('saveEventBtn').addEventListener('click',      saveEvent);
+document.getElementById('listDeliveryChangesBtn').addEventListener('click', () => {
+  const eventId = document.getElementById('eventEditId').value;
+  const ev = allEvents.find((e) => String(e.id) === String(eventId));
+  if (ev) openAdminDelChangesModal(ev);
+});
 document.getElementById('eventTypeFilter').addEventListener('change',  (e) => {
   currentFilter = e.target.value;
   applyCalendarFilter();
@@ -352,6 +364,68 @@ document.getElementById('eventTypeFilter').addEventListener('change',  (e) => {
 
 // Lazy calendar init on tab activation
 document.getElementById('tab-calendario').addEventListener('shown.bs.tab', initCalendar);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ADMIN DELIVERY CHANGES MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+
+let allOwnersDelAdm = []; // cached owners for delivery changes name lookup
+
+async function openAdminDelChangesModal(ev) {
+  document.getElementById('adminDelChangesModalTitle').textContent =
+    `Richieste di variazione — ${ev.description}`;
+  document.getElementById('adminDelChangesEventInfo').textContent =
+    `${formatDateIT(ev.date)}  —  ${DELIVERY_LABELS[ev.delivery_point] ?? ev.delivery_point ?? ''}`;
+
+  // Close the event edit modal first, then open this one
+  bootstrap.Modal.getInstance(document.getElementById('eventModal'))?.hide();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminDelChangesModal')).show();
+
+  // Lazy-load owners once
+  if (!allOwnersDelAdm.length) {
+    try { allOwnersDelAdm = await apiFetch('/api/quota-owners'); } catch { /* ignore */ }
+  }
+
+  await refreshAdminDeliveryChangesList(ev.id);
+}
+
+async function refreshAdminDeliveryChangesList(eventId) {
+  const container = document.getElementById('adminDelChangesList');
+  container.innerHTML = `
+    <div class="text-center text-muted py-3">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+      <span class="ms-2">Caricamento…</span>
+    </div>`;
+  try {
+    const changes = await apiFetch(`/api/delivery-changes?event_id=${eventId}`);
+    renderAdminDeliveryChangesList(changes);
+  } catch {
+    container.innerHTML = `<p class="text-danger small">Errore durante il caricamento.</p>`;
+  }
+}
+
+function renderAdminDeliveryChangesList(changes) {
+  const container = document.getElementById('adminDelChangesList');
+  if (!changes.length) {
+    container.innerHTML = `<p class="text-muted fst-italic text-center py-2">Nessuna richiesta di variazione.</p>`;
+    return;
+  }
+  container.innerHTML = changes.map((ch) => {
+    const owner = allOwnersDelAdm.find((o) => String(o.id) === String(ch.quota_owner_id));
+    const ownerName = owner ? `${owner.name} ${owner.surname}` : `Socio #${ch.quota_owner_id}`;
+    const pointLabel = DELIVERY_LABELS[ch.new_delivery_point] ?? ch.new_delivery_point;
+    return `
+      <div class="border rounded p-3 mb-2">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <strong>${escHtml(ownerName)}</strong>
+          <span class="badge bg-primary">${escHtml(pointLabel)}</span>
+        </div>
+        ${ch.description
+          ? `<p class="mb-0 text-muted small"><i class="bi bi-chat-text me-1"></i>${escHtml(ch.description)}</p>`
+          : `<p class="mb-0 text-muted small fst-italic">Nessuna nota.</p>`}
+      </div>`;
+  }).join('');
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ADMIN INVOLVEMENT PARTICIPANTS MODAL

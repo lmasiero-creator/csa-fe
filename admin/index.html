@@ -27,7 +27,7 @@
         <button class="nav-link"        id="tab-calendario"  data-bs-toggle="tab" data-bs-target="#pane-calendario"  type="button" role="tab">Calendario</button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link"        id="tab-destinatari" data-bs-toggle="tab" data-bs-target="#pane-destinatari" type="button" role="tab">Destinatari</button>
+        <button class="nav-link"        id="tab-destinatari" data-bs-toggle="tab" data-bs-target="#pane-destinatari" type="button" role="tab">Notifiche</button>
       </li>
     </ul>
 
@@ -215,6 +215,9 @@
           <button type="button" class="btn btn-outline-secondary me-auto" id="clearEventFormBtn">
             <i class="bi bi-eraser me-1"></i>Pulisci
           </button>
+          <button type="button" class="btn btn-outline-primary d-none" id="listDeliveryChangesBtn">
+            <i class="bi bi-list-ul me-1"></i>Lista richieste
+          </button>
           <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
             <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
@@ -310,6 +313,27 @@
           </button>
           <button type="button" class="btn btn-success" id="adminSaveInvBtn">
             <i class="bi bi-check-lg me-1"></i>Salva
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Delivery changes list (admin) ────────────────────────────── -->
+  <div class="modal fade" id="adminDelChangesModal" tabindex="-1" aria-labelledby="adminDelChangesModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminDelChangesModalTitle">Richieste di variazione</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-secondary py-2 mb-3" id="adminDelChangesEventInfo"></div>
+          <div id="adminDelChangesList"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Chiudi
           </button>
         </div>
       </div>
