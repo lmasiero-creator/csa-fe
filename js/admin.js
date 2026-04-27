@@ -3,9 +3,15 @@
  * Manages three tabs: Membri (quota owners), Calendario (events), Destinatari (recipients).
  */
 
-import { API_BASE_URL, apiFetch as apiFetchRaw } from './config.js';
+import { API_BASE_URL, apiFetch as apiFetchRaw, BASE_PATH } from './config.js';
 import { showToast }       from './layout.js';
 import { initOwnerPicker } from './owner-picker.js';
+
+// ── Admin auth guard ──────────────────────────────────────────────────────────
+// Redirect to home if the 1-hour admin cookie is absent or expired.
+if (!document.cookie.split('; ').some((r) => r.startsWith('csa_admin_auth='))) {
+  window.location.replace(BASE_PATH + '/');
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const QUOTA_LABELS     = { quota_intera: 'Quota intera', mezza_quota: 'Mezza quota' };

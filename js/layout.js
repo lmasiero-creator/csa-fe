@@ -99,6 +99,18 @@ if (!document.getElementById('appToast')) {
 }
 
 // ── Admin password modal (injected once) ─────────────────────────────────────
+// If the gear icon is clicked but the admin auth cookie is still valid,
+// skip the password modal and navigate directly to the admin page.
+const _adminNavBtn = document.getElementById('adminNavBtn');
+if (_adminNavBtn) {
+  const _hasAdminCookie = document.cookie.split('; ').some((r) => r.startsWith('csa_admin_auth='));
+  if (_hasAdminCookie) {
+    _adminNavBtn.removeAttribute('data-bs-toggle');
+    _adminNavBtn.removeAttribute('data-bs-target');
+    _adminNavBtn.addEventListener('click', () => { window.location.href = BASE_PATH + '/admin/'; });
+  }
+}
+
 if (!document.getElementById('adminModal')) {
   document.body.insertAdjacentHTML('beforeend', `
     <div class="modal fade" id="adminModal" tabindex="-1"
@@ -151,6 +163,7 @@ if (!document.getElementById('adminModal')) {
   // Submit on button click
   pwdSubmit.addEventListener('click', () => {
     if (pwdInput.value === 'bal\u00f9') {
+      document.cookie = 'csa_admin_auth=1; max-age=3600; path=/; SameSite=Lax';
       window.location.href = BASE_PATH + '/admin/';
     } else {
       pwdError.classList.remove('d-none');
