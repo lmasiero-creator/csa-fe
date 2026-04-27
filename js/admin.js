@@ -242,6 +242,21 @@ function initCalendar() {
     noEventsContent: 'Nessun evento',
     events: [],
     eventDidMount: (info) => {
+      const timeTd = info.el.querySelector('.fc-list-event-time');
+      if (timeTd) {
+        const ev = info.event.extendedProps;
+        let badge;
+        if (ev.type === 'inv') {
+          badge = ev.participant_count > 0
+            ? `<span class="badge bg-success me-2">iscritti OK</span>`
+            : `<span class="badge bg-danger me-2">iscritti KO</span>`;
+        } else if (ev.type === 'del') {
+          badge = `<span class="badge bg-primary me-2">distribuzione</span>`;
+        } else {
+          badge = `<span class="badge badge-orange me-2">evento</span>`;
+        }
+        timeTd.innerHTML = `<span class="d-block text-center">${timeTd.innerHTML}</span><span class="d-block text-center">${badge}</span>`;
+      }
       new bootstrap.Tooltip(info.el, {
         title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
       });

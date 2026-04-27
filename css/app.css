@@ -94,6 +94,19 @@ body {
   border-color: #146c43 !important;
 }
 
+/* ── Calendar badges: hide the default coloured dot; badges provide context ───*/
+
+/* Hide the coloured dot in list view — badge replaces it */
+.fc .fc-list-event-dot {
+  display: none !important;
+}
+
+/* Orange badge for "evento" type */
+.badge-orange {
+  background-color: #fd7e14;
+  color: #fff;
+}
+
 /* ── Calendar: day cells and day numbers are not clickable ─────────────────────*/
 
 .fc .fc-daygrid-day,
@@ -122,6 +135,24 @@ body {
 .fc-event-expired {
   opacity: 0.55;
   cursor: not-allowed !important;
+}
+
+/* ── Calendar: hide "today" button on narrow screens to keep toolbar on one row ─*/
+
+@media (max-width: 500px) {
+  .fc .fc-today-button {
+    display: none !important;
+  }
+  /* Give all three toolbar chunks equal width so the title stays truly centered */
+  .fc .fc-toolbar-chunk {
+    flex: 1;
+  }
+  .fc .fc-toolbar-chunk:nth-child(2) {
+    text-align: center;
+  }
+  .fc .fc-toolbar-title {
+    font-size: 1.1em;
+  }
 }
 
 /* ── Misc ──────────────────────────────────────────────────────────────────────*/

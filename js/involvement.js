@@ -63,6 +63,14 @@ async function loadAndRenderCalendar() {
       noEventsContent: 'Nessuna attività programmata',
       events: events.map(eventToFC),
       eventDidMount: (info) => {
+        const timeTd = info.el.querySelector('.fc-list-event-time');
+        if (timeTd) {
+          const ok = info.event.extendedProps.participant_count > 0;
+          const badge = ok
+            ? `<span class="badge bg-success me-2">iscritti OK</span>`
+            : `<span class="badge bg-danger me-2">iscritti KO</span>`;
+          timeTd.innerHTML = `<span class="d-block text-center">${timeTd.innerHTML}</span><span class="d-block text-center">${badge}</span>`;
+        }
         new bootstrap.Tooltip(info.el, {
           title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
         });

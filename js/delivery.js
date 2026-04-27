@@ -18,6 +18,10 @@ function formatDateIT(isoStr) {
   return hhmm ? `${d}/${mo}/${y} ${hhmm}` : `${d}/${mo}/${y}`;
 }
 
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ── Cookie helper ──────────────────────────────────────────────────────────────
 function savedOwnerId() {
   const m = document.cookie.split('; ').find((r) => r.startsWith('csa_account_id='));
@@ -83,6 +87,14 @@ async function loadAndRenderCalendar() {
       noEventsContent: 'Nessuna distribuzione programmata',
       events: events.map(eventToFC),
       eventDidMount: (info) => {
+        const timeTd = info.el.querySelector('.fc-list-event-time');
+        if (timeTd) {
+          const expired = info.event.extendedProps.expired;
+          const badge = expired
+            ? `<span class="badge bg-secondary me-2">distribuzione</span>`
+            : `<span class="badge bg-primary me-2">distribuzione</span>`;
+          timeTd.innerHTML = `<span class="d-block text-center">${timeTd.innerHTML}</span><span class="d-block text-center">${badge}</span>`;
+        }
         new bootstrap.Tooltip(info.el, {
           title: info.event.title, placement: 'top', trigger: 'hover', container: 'body',
         });
