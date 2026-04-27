@@ -271,11 +271,7 @@ function initCalendar() {
     eventClick: (info) => {
       const ev = allEvents.find((e) => String(e.id) === info.event.id);
       if (!ev) return;
-      if (ev.type === 'inv') {
-        openAdminInvModal(ev);
-      } else {
-        openEventModal(ev);
-      }
+      openEventModal(ev);
     },
   });
   calendarInstance.render();
