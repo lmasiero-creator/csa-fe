@@ -61,6 +61,24 @@ const FP_OPTS = {
   minuteIncrement: 15,
 };
 
+/**
+ * Toggle the event date picker between all-day (date only) and timed mode.
+ * Preserves the already-selected date when switching.
+ */
+function toggleAllDay(isAllDay) {
+  const preserved = fpEventDate?.selectedDates[0] ?? null;
+  if (isAllDay) {
+    fpEventDate?.set('enableTime', false);
+    fpEventDate?.set('dateFormat', 'Y-m-d');
+    fpEventDate?.set('altFormat', 'd/m/Y');
+  } else {
+    fpEventDate?.set('enableTime', true);
+    fpEventDate?.set('dateFormat', 'Y-m-dTH:i:S');
+    fpEventDate?.set('altFormat', 'd/m/Y H:i');
+  }
+  if (preserved) fpEventDate?.setDate(preserved, false);
+}
+
 let fpEventDate     = null;
 let fpEventDeadline = null;
 
@@ -280,6 +298,10 @@ function initCalendar() {
 
 function openEventModal(ev = {}) {
   document.getElementById('eventEditId').value           = ev.id ?? '';
+  // Detect all-day: date stored without a time component (no 'T' separator)
+  const isAllDay = ev.date ? !ev.date.includes('T') : false;
+  document.getElementById('eventAllDay').checked = isAllDay;
+  toggleAllDay(isAllDay);
   fpEventDate?.setDate(ev.date     ? ev.date     : null, false);
   fpEventDeadline?.setDate(ev.deadline ? ev.deadline : null, false);
   document.getElementById('eventType').value             = ev.type ?? '';
@@ -296,6 +318,8 @@ function openEventModal(ev = {}) {
 function clearEventForm() {
   document.getElementById('eventEditId').value = '';
   document.getElementById('eventForm').reset();
+  document.getElementById('eventAllDay').checked = false;
+  toggleAllDay(false);
   fpEventDate?.clear();
   fpEventDeadline?.clear();
   toggleDeliveryFields(false);
@@ -304,6 +328,10 @@ function clearEventForm() {
 function toggleDeliveryFields(show) {
   document.getElementById('deliveryFields').classList.toggle('d-none', !show);
 }
+
+document.getElementById('eventAllDay').addEventListener('change', (e) => {
+  toggleAllDay(e.target.checked);
+});
 
 document.getElementById('eventType').addEventListener('change', (e) => {
   toggleDeliveryFields(e.target.value === 'del');

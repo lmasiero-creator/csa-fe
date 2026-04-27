@@ -173,7 +173,13 @@
             <input type="hidden" id="eventEditId">
 
             <div class="mb-3">
-              <label for="eventDate" class="form-label fw-semibold">Data e ora <span class="text-danger">*</span></label>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label for="eventDate" class="form-label fw-semibold mb-0">Data <span class="text-danger">*</span></label>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="eventAllDay" role="switch">
+                  <label class="form-check-label small" for="eventAllDay">Tutto il giorno</label>
+                </div>
+              </div>
               <input type="text" id="eventDate" class="form-control" placeholder="gg/mm/aaaa hh:mm" required>
             </div>
             <div class="mb-3">
