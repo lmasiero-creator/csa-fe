@@ -15,14 +15,24 @@ if (headerRoot) {
   headerRoot.innerHTML = `
     <nav class="navbar navbar-dark bg-dark px-3 d-flex justify-content-between align-items-center">
       <a class="navbar-brand fw-semibold mb-0" href="${BASE_PATH}/">🌱 CSA</a>
-      <a href="${BASE_PATH}/account/"
-         title="Il mio account"
-         class="text-decoration-none"
-         aria-label="Il mio account">
-        <span id="navAvatar" class="nav-avatar-circle">
-          <i class="bi bi-person-fill" style="font-size:1.1rem"></i>
-        </span>
-      </a>
+      <div class="d-flex align-items-center gap-3">
+        <button id="adminNavBtn" type="button"
+                title="Amministrazione"
+                class="btn btn-link p-0 border-0 text-decoration-none"
+                aria-label="Amministrazione"
+                data-bs-toggle="modal"
+                data-bs-target="#adminModal">
+          <i class="bi bi-gear" style="font-size:1.4rem;color:rgba(255,255,255,.75)"></i>
+        </button>
+        <a href="${BASE_PATH}/account/"
+           title="Il mio account"
+           class="text-decoration-none"
+           aria-label="Il mio account">
+          <span id="navAvatar" class="nav-avatar-circle">
+            <i class="bi bi-person-fill" style="font-size:1.1rem"></i>
+          </span>
+        </a>
+      </div>
     </nav>`;
 }
 
@@ -86,6 +96,83 @@ if (!document.getElementById('appToast')) {
         </div>
       </div>
     </div>`);
+}
+
+// ── Admin password modal (injected once) ─────────────────────────────────────
+if (!document.getElementById('adminModal')) {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal fade" id="adminModal" tabindex="-1"
+         aria-labelledby="adminModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="adminModalLabel">
+              <i class="bi bi-gear me-2"></i>Pagina di amministrazione CSA app
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Chiudi"></button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group">
+              <input type="password" id="adminPwdInput" class="form-control"
+                     placeholder="Password" autocomplete="current-password">
+              <button class="btn btn-outline-secondary" type="button"
+                      id="adminPwdToggle" aria-label="Mostra/nascondi password">
+                <i class="bi bi-eye" id="adminPwdToggleIcon"></i>
+              </button>
+            </div>
+            <div id="adminPwdError" class="text-danger mt-2 d-none">Password sbagliata</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Annulla</button>
+            <button type="button" id="adminPwdSubmit"
+                    class="btn btn-dark">Accedi</button>
+          </div>
+        </div>
+      </div>
+    </div>`);
+
+  // Wire up admin modal interactions
+  const adminModal    = document.getElementById('adminModal');
+  const pwdInput      = document.getElementById('adminPwdInput');
+  const pwdToggle     = document.getElementById('adminPwdToggle');
+  const pwdToggleIcon = document.getElementById('adminPwdToggleIcon');
+  const pwdError      = document.getElementById('adminPwdError');
+  const pwdSubmit     = document.getElementById('adminPwdSubmit');
+
+  // Toggle password visibility
+  pwdToggle.addEventListener('click', () => {
+    const isPassword = pwdInput.type === 'password';
+    pwdInput.type = isPassword ? 'text' : 'password';
+    pwdToggleIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+  });
+
+  // Submit on button click
+  pwdSubmit.addEventListener('click', () => {
+    if (pwdInput.value === 'bal\u00f9') {
+      window.location.href = BASE_PATH + '/admin/';
+    } else {
+      pwdError.classList.remove('d-none');
+      pwdInput.focus();
+    }
+  });
+
+  // Submit on Enter key
+  pwdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') pwdSubmit.click();
+  });
+
+  // Reset modal state on close
+  adminModal.addEventListener('hidden.bs.modal', () => {
+    pwdInput.value   = '';
+    pwdInput.type    = 'password';
+    pwdToggleIcon.className = 'bi bi-eye';
+    pwdError.classList.add('d-none');
+  });
+
+  // Focus input when modal opens
+  adminModal.addEventListener('shown.bs.modal', () => pwdInput.focus());
 }
 
 // ── Wakeup banner (injected once, hidden by default) ───────────────────────────
